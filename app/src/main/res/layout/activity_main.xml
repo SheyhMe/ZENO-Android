@@ -1,0 +1,19 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:gravity="center_horizontal"
+    android:padding="24dp" android:background="#11111B">
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="ZENO" android:textColor="#FFFFFF" android:textSize="38sp"
+        android:textStyle="bold" android:layout_marginTop="48dp" />
+    <TextView android:id="@+id/statusText" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:text="Ovozli buyruqni kutyapman"
+        android:textColor="#C9C6D8" android:textSize="16sp" android:gravity="center"
+        android:layout_marginTop="24dp" android:layout_marginBottom="28dp" />
+    <Button android:id="@+id/listenButton" android:layout_width="match_parent"
+        android:layout_height="64dp" android:text="GAPIRISH UCHUN BOSING"
+        android:textSize="16sp" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Misollar: Mobile Legendsni och · Budilnikni 7:00 ga qo‘y · 5 daqiqalik taymer · Ali ga qo‘ng‘iroq · Google’dan ob-havoni qidir"
+        android:textColor="#AAA6BC" android:textSize="14sp" android:gravity="center"
+        android:layout_marginTop="28dp" />
+</LinearLayout>
