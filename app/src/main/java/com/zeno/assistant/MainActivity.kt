@@ -9,6 +9,7 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -30,7 +31,7 @@ class MainActivity : Activity() {
                         !status.text.toString().contains("uzildi") &&
                         !status.text.toString().contains("xatosi")
                     findViewById<Button>(R.id.listenButton).text =
-                        if (voiceActive) "TINGLASHNI TO'XTATISH" else "FONDA TINGLASHNI YOQISH"
+                        if (voiceActive) "TINGLASHNI TO'XTATISH" else "OVOZLI SUHBATNI BOSHLASH"
                 }
                 ZenoVoiceService.ACTION_TRANSCRIPT -> {
                     appendChat(intent.getStringExtra("sender") ?: "ZENO", intent.getStringExtra(ZenoVoiceService.EXTRA_TEXT) ?: "")
@@ -48,11 +49,31 @@ class MainActivity : Activity() {
 
         findViewById<Button>(R.id.listenButton).setOnClickListener { toggleBackgroundVoice() }
         findViewById<Button>(R.id.sendButton).setOnClickListener { sendMessage() }
-        findViewById<Button>(R.id.appsButton).setOnClickListener { fill("YouTube ilovasini och") }
-        findViewById<Button>(R.id.searchButton).setOnClickListener { fill("Internetdan qidir: ") }
-        findViewById<Button>(R.id.alarmButton).setOnClickListener { fill("Ertalab soat 07:00 ga budilnik qo'y") }
-        findViewById<Button>(R.id.timerButton).setOnClickListener { fill("10 daqiqaga taymer qo'y") }
-        appendChat("ZENO", "Assalomu alaykum. Ovozli suhbatni boshlang. Ekran o'chganda ham faol suhbat davom etadi.")
+        findViewById<Button>(R.id.appsButton).setOnClickListener { fillAndOpenChat("YouTube ilovasini och") }
+        findViewById<Button>(R.id.searchButton).setOnClickListener { fillAndOpenChat("Internetdan qidir: ") }
+        findViewById<Button>(R.id.alarmButton).setOnClickListener { fillAndOpenChat("Ertalab soat 07:00 ga budilnik qo'y") }
+        findViewById<Button>(R.id.timerButton).setOnClickListener { fillAndOpenChat("10 daqiqaga taymer qo'y") }
+        findViewById<Button>(R.id.telegramButton).setOnClickListener { fillAndOpenChat("Telegramni och") }
+        findViewById<Button>(R.id.instagramButton).setOnClickListener { fillAndOpenChat("Instagramni och") }
+        findViewById<Button>(R.id.chromeButton).setOnClickListener { fillAndOpenChat("Chromeni och") }
+        findViewById<Button>(R.id.cameraButton).setOnClickListener { fillAndOpenChat("Kamerani och") }
+
+        findViewById<Button>(R.id.navHome).setOnClickListener { showPage(R.id.homePage) }
+        findViewById<Button>(R.id.navChat).setOnClickListener { showPage(R.id.chatPage) }
+        findViewById<Button>(R.id.navApps).setOnClickListener { showPage(R.id.appsPage) }
+        findViewById<Button>(R.id.navProfile).setOnClickListener { showPage(R.id.profilePage) }
+
+        appendChat("ZENO", "Assalomu alaykum. Men tayyorman. Ovozli suhbatni boshlashingiz mumkin.")
+    }
+
+    private fun showPage(pageId: Int) {
+        val pages = listOf(R.id.homePage, R.id.chatPage, R.id.appsPage, R.id.profilePage)
+        pages.forEach { findViewById<View>(it).visibility = if (it == pageId) View.VISIBLE else View.GONE }
+    }
+
+    private fun fillAndOpenChat(value: String) {
+        fill(value)
+        showPage(R.id.chatPage)
     }
 
     override fun onStart() {
@@ -92,7 +113,7 @@ class MainActivity : Activity() {
         appendChat("Siz", message)
         messageInput.text.clear()
         if (!voiceActive) {
-            Toast.makeText(this, "Avval fon ovozli boshqaruvini yoqing, so'ng buyruq yuboring.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Avval ovozli suhbatni boshlang.", Toast.LENGTH_LONG).show()
             return
         }
         startService(Intent(this, ZenoVoiceService::class.java)
@@ -108,7 +129,8 @@ class MainActivity : Activity() {
     private fun appendChat(sender: String, message: String) {
         if (message.isBlank()) return
         val current = chatLog.text.toString()
-        chatLog.text = (if (current.isBlank()) "" else "$current\n\n") + "$sender\n$message"
+        val updated = (if (current.isBlank()) "" else "$current\n\n") + "$sender\n$message"
+        chatLog.text = if (updated.length > 6000) updated.takeLast(6000) else updated
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -117,7 +139,7 @@ class MainActivity : Activity() {
             toggleBackgroundVoice()
         } else if (requestCode == permissionRequest) {
             status.text = "Mikrofon ruxsati kerak"
-            Toast.makeText(this, "Fon rejimida ovozli boshqaruv uchun mikrofon ruxsati kerak.", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Ovozli boshqaruv uchun mikrofon ruxsati kerak.", Toast.LENGTH_LONG).show()
         }
     }
 }
