@@ -10,6 +10,9 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -20,6 +23,7 @@ class MainActivity : Activity() {
     private lateinit var chatLog: TextView
     private lateinit var messageInput: EditText
     private var voiceActive = false
+    private var orbPulse: AnimatorSet? = null
     private val permissionRequest = 102
 
     private val voiceReceiver = object : BroadcastReceiver() {
@@ -44,6 +48,21 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         status = findViewById(R.id.statusText)
+        val orb = findViewById<View>(R.id.orbContainer)
+        orbPulse = AnimatorSet().apply {
+            playTogether(
+                ObjectAnimator.ofFloat(orb, View.SCALE_X, 1f, 1.035f),
+                ObjectAnimator.ofFloat(orb, View.SCALE_Y, 1f, 1.035f)
+            )
+            duration = 2100L
+            interpolator = AccelerateDecelerateInterpolator()
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: android.animation.Animator) {
+                    if (orbPulse === animation) orbPulse?.start()
+                }
+            })
+            start()
+        }
         chatLog = findViewById(R.id.chatLog)
         messageInput = findViewById(R.id.messageInput)
 
@@ -131,6 +150,12 @@ class MainActivity : Activity() {
         val current = chatLog.text.toString()
         val updated = (if (current.isBlank()) "" else "$current\n\n") + "$sender\n$message"
         chatLog.text = if (updated.length > 6000) updated.takeLast(6000) else updated
+    }
+
+    override fun onDestroy() {
+        orbPulse?.cancel()
+        orbPulse = null
+        super.onDestroy()
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
