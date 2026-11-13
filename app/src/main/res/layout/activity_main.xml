@@ -1,19 +1,136 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical" android:gravity="center_horizontal"
-    android:padding="24dp" android:background="#11111B">
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:text="ZENO" android:textColor="#FFFFFF" android:textSize="38sp"
-        android:textStyle="bold" android:layout_marginTop="48dp" />
-    <TextView android:id="@+id/statusText" android:layout_width="match_parent"
-        android:layout_height="wrap_content" android:text="Ovozli buyruqni kutyapman"
-        android:textColor="#C9C6D8" android:textSize="16sp" android:gravity="center"
-        android:layout_marginTop="24dp" android:layout_marginBottom="28dp" />
-    <Button android:id="@+id/listenButton" android:layout_width="match_parent"
-        android:layout_height="64dp" android:text="GAPIRISH UCHUN BOSING"
-        android:textSize="16sp" />
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="Misollar: Mobile Legendsni och · Budilnikni 7:00 ga qo‘y · 5 daqiqalik taymer · Ali ga qo‘ng‘iroq · Google’dan ob-havoni qidir"
-        android:textColor="#AAA6BC" android:textSize="14sp" android:gravity="center"
-        android:layout_marginTop="28dp" />
-</LinearLayout>
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="#090B12"
+    android:overScrollMode="never">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="34dp"
+        android:paddingBottom="28dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Z E N O"
+            android:textColor="#F4F3FF"
+            android:textSize="30sp"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.16"
+            android:layout_gravity="center_horizontal" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PERSONAL AI ASSISTANT"
+            android:textColor="#858AA3"
+            android:textSize="10sp"
+            android:letterSpacing="0.22"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="7dp" />
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:layout_marginTop="34dp"
+            android:background="#111625">
+
+            <View
+                android:layout_width="190dp"
+                android:layout_height="190dp"
+                android:layout_gravity="center"
+                android:background="@drawable/zeno_orb" />
+
+            <TextView
+                android:id="@+id/statusText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|center_horizontal"
+                android:gravity="center"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="20dp"
+                android:text="ZENO sizni tinglashga tayyor"
+                android:textColor="#D7DBEA"
+                android:textSize="14sp" />
+        </FrameLayout>
+
+        <Button
+            android:id="@+id/listenButton"
+            android:layout_width="match_parent"
+            android:layout_height="62dp"
+            android:layout_marginTop="24dp"
+            android:backgroundTint="#7667F7"
+            android:text="GAPIRISH UCHUN BOSING"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:fontFamily="sans-serif-medium" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="30dp"
+            android:text="NIMALAR QILA OLADI"
+            android:textColor="#858AA3"
+            android:textSize="11sp"
+            android:letterSpacing="0.14" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="12dp"
+            android:background="#111625"
+            android:padding="17dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="01   Ilovalarni ovoz bilan ochish"
+                android:textColor="#E7E9F4"
+                android:textSize="14sp"
+                android:paddingVertical="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="02   Budilnik va taymer sozlash"
+                android:textColor="#E7E9F4"
+                android:textSize="14sp"
+                android:paddingVertical="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="03   Internetdan ma'lumot qidirish"
+                android:textColor="#E7E9F4"
+                android:textSize="14sp"
+                android:paddingVertical="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="04   Qo'ng'iroq va SMS oynasini ochish"
+                android:textColor="#E7E9F4"
+                android:textSize="14sp"
+                android:paddingVertical="8dp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:gravity="center"
+            android:text="ZENO V2  •  DEVELOPMENT BUILD"
+            android:textColor="#626A82"
+            android:textSize="10sp"
+            android:letterSpacing="0.12" />
+    </LinearLayout>
+</ScrollView>
