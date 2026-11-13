@@ -92,6 +92,8 @@ class MainActivity : Activity() {
 
         findViewById<Button>(R.id.listenButton).setOnClickListener { toggleBackgroundVoice() }
         findViewById<Button>(R.id.homeVoiceButton).setOnClickListener { showPage(R.id.voicePage) }
+        findViewById<View>(R.id.homeChatTile).setOnClickListener { showPage(R.id.chatPage); messageInput.requestFocus() }
+        findViewById<View>(R.id.homeAppsTile).setOnClickListener { showPage(R.id.appsPage) }
         findViewById<Button>(R.id.sendButton).setOnClickListener { sendMessage() }
         findViewById<Button>(R.id.appsButton).setOnClickListener { fillAndOpenChat("YouTube ilovasini och") }
         findViewById<Button>(R.id.searchButton).setOnClickListener { fillAndOpenChat("Internetdan qidir: ") }
