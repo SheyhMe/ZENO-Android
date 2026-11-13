@@ -11,12 +11,17 @@ import android.widget.Toast
 import io.elevenlabs.ConversationClient
 import io.elevenlabs.ConversationConfig
 import io.elevenlabs.ConversationSession
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class MainActivity : Activity() {
     private lateinit var status: TextView
     private lateinit var chatLog: TextView
     private lateinit var messageInput: EditText
     private var session: ConversationSession? = null
+    private val mainScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var pendingMessage: String? = null
     private val permissionRequest = 102
     private val agentId = "agent_1001m784hww0ftstymy60zkrtx6b"
@@ -58,8 +63,9 @@ class MainActivity : Activity() {
 
     private fun toggleVoiceSession() {
         if (session != null) {
-            session?.endSession()
+            val active = session
             session = null
+            mainScope.launch { active?.endSession() }
             status.text = "Ulandi uzildi"
             findViewById<Button>(R.id.listenButton).text = "OVOZLI SUHBAT"
         } else {
@@ -114,7 +120,16 @@ class MainActivity : Activity() {
                     runOnUiThread { status.text = if (mode.toString().contains("SPEAKING")) "ZENO gapiryapti" else "ZENO tinglayapti" }
                 }
             )
-            session = ConversationClient.startSession(config, this)
+            mainScope.launch {
+                try {
+                    session = ConversationClient.startSession(config, this@MainActivity)
+                } catch (e: Exception) {
+                    session = null
+                    status.text = "Ulanish amalga oshmadi"
+                    findViewById<Button>(R.id.listenButton).text = "QAYTA URINISH"
+                    Toast.makeText(this@MainActivity, e.localizedMessage ?: "ZENO serveriga ulanib bo‘lmadi", Toast.LENGTH_LONG).show()
+                }
+            }
         } catch (e: Exception) {
             session = null
             status.text = "Ulanish amalga oshmadi"
@@ -139,8 +154,9 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
-        session?.endSession()
+        val active = session
         session = null
+        mainScope.launch { active?.endSession() }
         super.onDestroy()
     }
 }
