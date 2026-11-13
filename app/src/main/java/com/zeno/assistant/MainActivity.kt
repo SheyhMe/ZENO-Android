@@ -10,8 +10,9 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.view.View
-import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.animation.PropertyValuesHolder
+import android.animation.ValueAnimator
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.Button
 import android.widget.EditText
@@ -23,7 +24,7 @@ class MainActivity : Activity() {
     private lateinit var chatLog: TextView
     private lateinit var messageInput: EditText
     private var voiceActive = false
-    private var orbPulse: AnimatorSet? = null
+    private var orbPulse: ObjectAnimator? = null
     private val permissionRequest = 102
 
     private val voiceReceiver = object : BroadcastReceiver() {
@@ -49,18 +50,15 @@ class MainActivity : Activity() {
         setContentView(R.layout.activity_main)
         status = findViewById(R.id.statusText)
         val orb = findViewById<View>(R.id.orbContainer)
-        orbPulse = AnimatorSet().apply {
-            playTogether(
-                ObjectAnimator.ofFloat(orb, View.SCALE_X, 1f, 1.035f),
-                ObjectAnimator.ofFloat(orb, View.SCALE_Y, 1f, 1.035f)
-            )
-            duration = 2100L
+        orbPulse = ObjectAnimator.ofPropertyValuesHolder(
+            orb,
+            PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.035f),
+            PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.035f)
+        ).apply {
+            duration = 2200L
+            repeatMode = ValueAnimator.REVERSE
+            repeatCount = ValueAnimator.INFINITE
             interpolator = AccelerateDecelerateInterpolator()
-            addListener(object : android.animation.AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: android.animation.Animator) {
-                    if (orbPulse === animation) orbPulse?.start()
-                }
-            })
             start()
         }
         chatLog = findViewById(R.id.chatLog)
