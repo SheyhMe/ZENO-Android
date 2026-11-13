@@ -20,12 +20,24 @@ import android.widget.TextView
 import android.widget.Toast
 import android.widget.ScrollView
 import android.view.inputmethod.EditorInfo
+import io.elevenlabs.ConversationClient
+import io.elevenlabs.ConversationConfig
+import io.elevenlabs.ConversationSession
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class MainActivity : Activity() {
     private lateinit var status: TextView
     private lateinit var chatLog: TextView
     private lateinit var messageInput: EditText
     private var voiceActive = false
+    private var textSession: ConversationSession? = null
+    private var textConnecting = false
+    private val pendingTextMessages = ArrayDeque<String>()
+    private val textScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val agentId = "agent_1001m784hww0ftstymy60zkrtx6b"
     private var orbPulse: ObjectAnimator? = null
     private val permissionRequest = 102
 
@@ -143,13 +155,56 @@ class MainActivity : Activity() {
         if (message.isEmpty()) return
         appendChat("Siz", message)
         messageInput.text.clear()
-        if (!voiceActive) {
-            Toast.makeText(this, "Avval ovozli suhbatni boshlang.", Toast.LENGTH_LONG).show()
+        if (voiceActive) {
+            startService(Intent(this, ZenoVoiceService::class.java)
+                .setAction(ZenoVoiceService.ACTION_SEND)
+                .putExtra(ZenoVoiceService.EXTRA_TEXT, message))
+        } else {
+            sendTextMessage(message)
+        }
+    }
+
+    private fun sendTextMessage(message: String) {
+        val active = textSession
+        if (active != null) {
+            active.sendUserMessage(message)
             return
         }
-        startService(Intent(this, ZenoVoiceService::class.java)
-            .setAction(ZenoVoiceService.ACTION_SEND)
-            .putExtra(ZenoVoiceService.EXTRA_TEXT, message))
+        pendingTextMessages.addLast(message)
+        if (textConnecting) return
+        textConnecting = true
+        status.text = "ZENO matnli rejimga ulanmoqda..."
+        textScope.launch {
+            try {
+                val config = ConversationConfig(
+                    agentId = agentId,
+                    textOnly = true,
+                    onConnect = {
+                        runOnUiThread { status.text = "ZENO matnli rejimda tayyor" }
+                    },
+                    onAgentResponseEvent = { reply, _ ->
+                        runOnUiThread { appendChat("ZENO", reply) }
+                    },
+                    onDisconnect = {
+                        textSession = null
+                        textConnecting = false
+                        runOnUiThread { status.text = "Matnli aloqa uzildi" }
+                    }
+                )
+                textSession = ConversationClient.startSession(config, this@MainActivity)
+                textConnecting = false
+                while (pendingTextMessages.isNotEmpty()) {
+                    textSession?.sendUserMessage(pendingTextMessages.removeFirst())
+                }
+            } catch (e: Exception) {
+                textConnecting = false
+                pendingTextMessages.clear()
+                runOnUiThread {
+                    appendChat("ZENO", "Ulanishda xatolik: ${e.localizedMessage ?: "noma'lum xato"}")
+                    status.text = "Matnli aloqa xatosi"
+                }
+            }
+        }
     }
 
     private fun fill(value: String) {
@@ -166,6 +221,7 @@ class MainActivity : Activity() {
 
     override fun onDestroy() {
         orbPulse?.cancel()
+        textScope.launch { textSession?.endSession(); textSession = null }
         orbPulse = null
         super.onDestroy()
     }
