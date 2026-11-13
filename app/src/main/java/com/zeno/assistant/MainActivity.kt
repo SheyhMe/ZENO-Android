@@ -18,6 +18,8 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import android.widget.ScrollView
+import android.view.inputmethod.EditorInfo
 
 class MainActivity : Activity() {
     private lateinit var status: TextView
@@ -63,6 +65,18 @@ class MainActivity : Activity() {
         }
         chatLog = findViewById(R.id.chatLog)
         messageInput = findViewById(R.id.messageInput)
+        val chatScroll = findViewById<ScrollView>(R.id.chatPage)
+        messageInput.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) chatScroll.postDelayed({
+                chatScroll.smoothScrollTo(0, chatScroll.getChildAt(0).height)
+            }, 180)
+        }
+        messageInput.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEND) {
+                sendMessage()
+                true
+            } else false
+        }
 
         findViewById<Button>(R.id.listenButton).setOnClickListener { toggleBackgroundVoice() }
         findViewById<Button>(R.id.sendButton).setOnClickListener { sendMessage() }
@@ -80,7 +94,7 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.navApps).setOnClickListener { showPage(R.id.appsPage) }
         findViewById<Button>(R.id.navProfile).setOnClickListener { showPage(R.id.profilePage) }
 
-        appendChat("ZENO", "Assalomu alaykum. Men tayyorman. Ovozli suhbatni boshlashingiz mumkin.")
+        appendChat("ZENO", "Assalomu alaykum. Men ZENOman. Avval yozishib tanishamiz — xohlasangiz keyin ovozli suhbatni yoqishingiz mumkin.")
     }
 
     private fun showPage(pageId: Int) {
