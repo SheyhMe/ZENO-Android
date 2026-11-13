@@ -58,7 +58,7 @@
                     android:textAllCaps="false" android:textColor="@color/zeno_text" android:textSize="14sp"/>
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:orientation="horizontal" android:layout_marginTop="18dp">
-                    <LinearLayout android:layout_width="0dp" android:layout_height="88dp"
+                    <LinearLayout android:id="@+id/homeChatTile" android:clickable="true" android:focusable="true" android:layout_width="0dp" android:layout_height="88dp"
                         android:layout_weight="1" android:layout_marginEnd="6dp"
                         android:gravity="center" android:orientation="vertical" android:background="@drawable/zeno_surface">
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
@@ -66,7 +66,7 @@
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                             android:text="AI Chat" android:textColor="@color/zeno_text" android:textSize="12sp"/>
                     </LinearLayout>
-                    <LinearLayout android:layout_width="0dp" android:layout_height="88dp"
+                    <LinearLayout android:id="@+id/homeAppsTile" android:clickable="true" android:focusable="true" android:layout_width="0dp" android:layout_height="88dp"
                         android:layout_weight="1" android:layout_marginStart="6dp"
                         android:gravity="center" android:orientation="vertical" android:background="@drawable/zeno_surface">
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
