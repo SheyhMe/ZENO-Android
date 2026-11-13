@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="zeno_background">#090811</color>
+    <color name="zeno_surface">#171326</color>
+    <color name="zeno_surface_alt">#211A35</color>
+    <color name="zeno_text">#F2EEFA</color>
+    <color name="zeno_muted">#A59BB9</color>
+    <color name="zeno_accent">#A78BFA</color>
+    <color name="zeno_accent_soft">#C3A4FF</color>
+    <color name="zeno_border">#382B55</color>
+    <color name="zeno_status">#7BE8BD</color>
+    <color name="zeno_input">#141020</color>
+    <color name="zeno_orb_center">#9B8CFF</color>
+    <color name="zeno_orb_edge">#18233D</color>
+</resources>
