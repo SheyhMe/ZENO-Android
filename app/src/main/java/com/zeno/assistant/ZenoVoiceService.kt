@@ -46,6 +46,7 @@ class ZenoVoiceService : Service() {
     private var wakeListening = false
     private var voiceTurnActive = false
     private var hasAgentResponded = false
+    private var turnStarting = false
     private val agentId = "agent_1001m784hww0ftstymy60zkrtx6b"
 
     override fun onCreate() {
@@ -128,7 +129,12 @@ class ZenoVoiceService : Service() {
     }
 
     private fun restartWakeRecognizer() {
-        if (session != null || !isForegroundServiceActive()) return
+        if (session != null || turnStarting || !isForegroundServiceActive()) return
+        if (speechRecognizer == null) {
+            startWakeRecognizer()
+            return
+        }
+        if (wakeListening) return
         handler.postDelayed({
             if (session == null && !isFinishingService()) {
                 try {
@@ -161,8 +167,9 @@ class ZenoVoiceService : Service() {
     }
 
     private fun startAssistantTurn() {
+        if (session != null || turnStarting) return
+        turnStarting = true
         stopWakeRecognizer()
-        if (session != null) return
         voiceTurnActive = true
         hasAgentResponded = false
         broadcastStatus("ZENO uyg'ondi — gapiring")
@@ -212,9 +219,11 @@ class ZenoVoiceService : Service() {
         scope.launch {
             try {
                 session = ConversationClient.startSession(config, this@ZenoVoiceService)
+                turnStarting = false
             } catch (e: Exception) {
                 broadcastStatus("Ulanish xatosi: " + (e.localizedMessage ?: "noma'lum xato"))
                 session = null
+                turnStarting = false
                 voiceTurnActive = false
                 restartWakeRecognizer()
             }
@@ -224,6 +233,7 @@ class ZenoVoiceService : Service() {
     private fun finishAssistantTurn() {
         if (!voiceTurnActive || !hasAgentResponded) return
         voiceTurnActive = false
+        hasAgentResponded = false
         val active = session
         session = null
         scope.launch { active?.endSession() }
