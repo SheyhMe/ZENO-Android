@@ -32,13 +32,13 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         tts = TextToSpeech(this, this)
         findViewById<Button>(R.id.listenButton).setOnClickListener { listen() }
         findViewById<Button>(R.id.sendButton).setOnClickListener { sendMessage() }
-        findViewById<Button>(R.id.appsButton).setOnClickListener { openApp("settings") }
+        findViewById<Button>(R.id.appsButton).setOnClickListener { messageInput.setText("YouTube och"); messageInput.setSelection(messageInput.text.length) }
         findViewById<Button>(R.id.searchButton).setOnClickListener {
             messageInput.setText("Internetdan qidir ")
             messageInput.setSelection(messageInput.text.length)
         }
-        findViewById<Button>(R.id.alarmButton).setOnClickListener { setAlarm("07:00") }
-        findViewById<Button>(R.id.timerButton).setOnClickListener { setTimer("10 daqiqa") }
+        findViewById<Button>(R.id.alarmButton).setOnClickListener { messageInput.setText("Budilnik 07:00"); messageInput.setSelection(messageInput.text.length) }
+        findViewById<Button>(R.id.timerButton).setOnClickListener { messageInput.setText("Taymer 10 daqiqa"); messageInput.setSelection(messageInput.text.length) }
     }
 
     override fun onInit(result: Int) {
