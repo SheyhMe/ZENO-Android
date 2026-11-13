@@ -112,7 +112,7 @@
                     android:layout_height="58dp"
                     android:layout_marginTop="8dp"
                     android:backgroundTint="#285B60"
-                    android:text="OVOZLI SUHBATNI BOSHLASH"
+                    android:text="Ovozli suhbat (ixtiyoriy)"
                     android:textAllCaps="false"
                     android:textColor="#F1FFFC"
                     android:textSize="14sp"
@@ -153,8 +153,8 @@
                     android:minHeight="260dp"
                     android:layout_marginTop="14dp"
                     android:padding="17dp"
-                    android:background="#111827"
-                    android:text="ZENO&#10;Salom. Buyruqlaringizni kutyapman."
+                    android:background="@drawable/rounded_panel"
+                    android:text="ZENO&#10;Salom. Sizga qanday yordam bera olaman?"
                     android:textColor="#E5EAF5"
                     android:textSize="14sp"
                     android:lineSpacingExtra="6dp" />
@@ -175,8 +175,9 @@
                         android:paddingEnd="12dp"
                         android:textColor="#FFFFFF"
                         android:textColorHint="#78849A"
-                        android:background="#172033"
-                        android:inputType="textCapSentences" />
+                        android:background="@drawable/rounded_input"
+                        android:imeOptions="actionSend"
+                        android:inputType="textCapSentences|textMultiLine" />
                     <Button
                         android:id="@+id/sendButton"
                         android:layout_width="58dp"
@@ -284,7 +285,7 @@
         android:layout_height="58dp"
         android:layout_marginTop="8dp"
         android:orientation="horizontal"
-        android:background="#111827">
+        android:background="@drawable/rounded_panel">
         <Button android:id="@+id/navHome" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="Bosh sahifa" android:textAllCaps="false" android:textSize="10sp" android:backgroundTint="#202C45" android:textColor="#E5EAF5" />
         <Button android:id="@+id/navChat" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="Suhbat" android:textAllCaps="false" android:textSize="10sp" android:backgroundTint="#111827" android:textColor="#E5EAF5" />
         <Button android:id="@+id/navApps" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:text="Ilovalar" android:textAllCaps="false" android:textSize="10sp" android:backgroundTint="#111827" android:textColor="#E5EAF5" />
