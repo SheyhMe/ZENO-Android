@@ -2,7 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#080812"
+    android:background="#080B14"
     android:fillViewport="true"
     android:overScrollMode="never">
     <LinearLayout
@@ -12,131 +12,170 @@
         android:paddingStart="20dp"
         android:paddingEnd="20dp"
         android:paddingTop="28dp"
-        android:paddingBottom="24dp">
+        android:paddingBottom="28dp">
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal">
-            <TextView
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Z E N O"
-                android:textColor="#F5F1FF"
-                android:textSize="26sp"
-                android:fontFamily="sans-serif-medium"
-                android:letterSpacing="0.14" />
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Z E N O"
+                    android:textColor="#F4F7FF"
+                    android:textSize="25sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.18" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="PERSONAL AI SYSTEM"
+                    android:textColor="#78849F"
+                    android:textSize="9sp"
+                    android:letterSpacing="0.2" />
+            </LinearLayout>
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="● ONLINE"
-                android:textColor="#9D8AFF"
+                android:background="#142A2C"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="7dp"
+                android:text="● READY"
+                android:textColor="#64E6C2"
                 android:textSize="10sp"
-                android:letterSpacing="0.1" />
+                android:letterSpacing="0.08" />
         </LinearLayout>
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
-            android:text="Sizga qanday yordam bera olaman?"
-            android:textColor="#F2EEFF"
-            android:textSize="20sp"
+            android:layout_marginTop="30dp"
+            android:text="Sizning raqamli yordamchingiz"
+            android:textColor="#F1F4FC"
+            android:textSize="22sp"
             android:fontFamily="sans-serif-medium" />
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text="Shaxsiy yordamchingiz"
-            android:textColor="#85839C"
+            android:text="Gapiring. Buyruq bering. ZENO bajarsin."
+            android:textColor="#8792A8"
             android:textSize="13sp" />
+
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="210dp"
-            android:layout_marginTop="20dp"
+            android:layout_height="220dp"
+            android:layout_marginTop="22dp"
             android:background="@drawable/zeno_orb">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|center_horizontal"
+                android:layout_marginTop="18dp"
+                android:text="ZENO CORE"
+                android:textColor="#B8B4FF"
+                android:textSize="10sp"
+                android:letterSpacing="0.22" />
             <TextView
                 android:id="@+id/statusText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom"
                 android:gravity="center"
-                android:padding="16dp"
+                android:padding="18dp"
                 android:text="ZENO tayyor"
-                android:textColor="#E8E0FF"
-                android:textSize="13sp" />
+                android:textColor="#F1F2FF"
+                android:textSize="13sp"
+                android:fontFamily="sans-serif-medium" />
         </FrameLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="26dp"
+            android:text="TEZKOR BUYRUQLAR"
+            android:textColor="#8F9BB4"
+            android:textSize="10sp"
+            android:letterSpacing="0.18" />
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="12dp"
             android:weightSum="4">
             <Button
                 android:id="@+id/appsButton"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="54dp"
                 android:layout_weight="1"
-                android:layout_marginEnd="4dp"
+                android:layout_marginEnd="5dp"
                 android:text="Ilovalar"
                 android:textAllCaps="false"
                 android:textSize="11sp"
-                android:backgroundTint="#211A3B"
-                android:textColor="#DCD3FF" />
+                android:backgroundTint="#182438"
+                android:textColor="#D9E7FF" />
             <Button
                 android:id="@+id/searchButton"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="54dp"
                 android:layout_weight="1"
-                android:layout_marginHorizontal="4dp"
+                android:layout_marginHorizontal="5dp"
                 android:text="Qidiruv"
                 android:textAllCaps="false"
                 android:textSize="11sp"
-                android:backgroundTint="#211A3B"
-                android:textColor="#DCD3FF" />
+                android:backgroundTint="#182438"
+                android:textColor="#D9E7FF" />
             <Button
                 android:id="@+id/alarmButton"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="54dp"
                 android:layout_weight="1"
-                android:layout_marginHorizontal="4dp"
+                android:layout_marginHorizontal="5dp"
                 android:text="Budilnik"
                 android:textAllCaps="false"
                 android:textSize="11sp"
-                android:backgroundTint="#211A3B"
-                android:textColor="#DCD3FF" />
+                android:backgroundTint="#182438"
+                android:textColor="#D9E7FF" />
             <Button
                 android:id="@+id/timerButton"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="54dp"
                 android:layout_weight="1"
-                android:layout_marginStart="4dp"
+                android:layout_marginStart="5dp"
                 android:text="Taymer"
                 android:textAllCaps="false"
                 android:textSize="11sp"
-                android:backgroundTint="#211A3B"
-                android:textColor="#DCD3FF" />
+                android:backgroundTint="#182438"
+                android:textColor="#D9E7FF" />
         </LinearLayout>
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="25dp"
             android:text="SUHBAT"
-            android:textColor="#9388B8"
-            android:textSize="11sp"
+            android:textColor="#8F9BB4"
+            android:textSize="10sp"
             android:letterSpacing="0.18" />
         <TextView
             android:id="@+id/chatLog"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="110dp"
+            android:minHeight="120dp"
             android:layout_marginTop="10dp"
-            android:padding="16dp"
-            android:background="#12111F"
-            android:text="ZENO\nSalom. Men buyruqlaringizni kutyapman."
-            android:textColor="#E9E5F5"
+            android:padding="17dp"
+            android:background="#111827"
+            android:text="ZENO\nSalom. Buyruqlaringizni kutyapman."
+            android:textColor="#E5EAF5"
             android:textSize="14sp"
-            android:lineSpacingExtra="5dp" />
+            android:lineSpacingExtra="6dp" />
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -148,13 +187,13 @@
                 android:layout_width="0dp"
                 android:layout_height="54dp"
                 android:layout_weight="1"
-                android:hint="ZENO ga xabar yozing..."
+                android:hint="Xabar yoki buyruq yozing..."
                 android:singleLine="true"
                 android:paddingStart="16dp"
                 android:paddingEnd="12dp"
                 android:textColor="#FFFFFF"
-                android:textColorHint="#77738D"
-                android:background="#19172A"
+                android:textColorHint="#78849A"
+                android:background="#172033"
                 android:inputType="textCapSentences" />
             <Button
                 android:id="@+id/sendButton"
@@ -163,27 +202,28 @@
                 android:layout_marginStart="8dp"
                 android:text="➤"
                 android:textSize="20sp"
-                android:backgroundTint="#7654F7"
+                android:backgroundTint="#625BE8"
                 android:textColor="#FFFFFF" />
         </LinearLayout>
         <Button
             android:id="@+id/listenButton"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="58dp"
             android:layout_marginTop="12dp"
-            android:backgroundTint="#30205E"
-            android:text="🎙  Ovozli buyruq berish"
+            android:backgroundTint="#285B60"
+            android:text="FONDA TINGLASHNI YOQISH"
             android:textAllCaps="false"
-            android:textColor="#F3EEFF"
-            android:textSize="14sp" />
+            android:textColor="#F1FFFC"
+            android:textSize="14sp"
+            android:fontFamily="sans-serif-medium" />
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
             android:gravity="center"
-            android:text="ZENO  •  V2 DEVELOPMENT"
-            android:textColor="#5F5A75"
-            android:textSize="10sp"
-            android:letterSpacing="0.14" />
+            android:text="MICROPHONE ACTIVE ONLY WITH YOUR PERMISSION"
+            android:textColor="#65738B"
+            android:textSize="9sp"
+            android:letterSpacing="0.08" />
     </LinearLayout>
 </ScrollView>
