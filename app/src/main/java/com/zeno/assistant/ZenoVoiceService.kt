@@ -62,65 +62,14 @@ class ZenoVoiceService : Service() {
         }
         broadcastStatus("ZENO ulanmoqda...")
         val tools = mapOf(
-            "open_app" to object : ClientTool {
-                override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
-                    val app = parameters["app_name"]?.toString().orEmpty()
-                    val result = openApp(app)
-                    return if (result) ClientToolResult.success("$" + "{app} ilovasi ochildi") else ClientToolResult.failure("$" + "{app} ilovasi topilmadi")
-                }
-            },
-            "set_alarm" to object : ClientTool {
-                override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
-                    val hour = (parameters["hour"] as? Number)?.toInt() ?: 7
-                    val minute = (parameters["minute"] as? Number)?.toInt() ?: 0
-                    val label = parameters["label"]?.toString() ?: "ZENO eslatmasi"
-                    val i = Intent(AlarmClock.ACTION_SET_ALARM).apply {
-                        putExtra(AlarmClock.EXTRA_HOUR, hour)
-                        putExtra(AlarmClock.EXTRA_MINUTES, minute)
-                        putExtra(AlarmClock.EXTRA_MESSAGE, label)
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    startActivity(i)
-                    return ClientToolResult.success("Budilnik " + hour + ":" + minute.toString().padStart(2, '0') + " ga sozlash oynasi ochildi")
-                }
-            },
-            "set_timer" to object : ClientTool {
-                override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
-                    val seconds = (parameters["seconds"] as? Number)?.toInt()?.coerceAtLeast(1) ?: 600
-                    val i = Intent(AlarmClock.ACTION_SET_TIMER).apply {
-                        putExtra(AlarmClock.EXTRA_LENGTH, seconds)
-                        putExtra(AlarmClock.EXTRA_MESSAGE, "ZENO taymeri")
-                        putExtra(AlarmClock.EXTRA_SKIP_UI, false)
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    startActivity(i)
-                    return ClientToolResult.success("Taymer ishga tushirish oynasi ochildi")
-                }
-            },
-            "web_search" to object : ClientTool {
-                override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
-                    val query = parameters["query"]?.toString().orEmpty()
-                    if (query.isBlank()) return ClientToolResult.failure("Qidiruv matni bo'sh")
-                    val i = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=" + Uri.encode(query))).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    startActivity(i)
-                    return ClientToolResult.success("Internet qidiruvi ochildi: " + query)
-                }
-            },
-            "open_settings" to object : ClientTool {
-                override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
-                    val section = parameters["section"]?.toString()?.lowercase().orEmpty()
-                    val action = when {
-                        "wifi" in section || "internet" in section -> Settings.ACTION_WIFI_SETTINGS
-                        "bluetooth" in section -> Settings.ACTION_BLUETOOTH_SETTINGS
-                        "display" in section || "ekran" in section -> Settings.ACTION_DISPLAY_SETTINGS
-                        "sound" in section || "ovoz" in section -> Settings.ACTION_SOUND_SETTINGS
-                        "battery" in section || "batareya" in section -> Settings.ACTION_BATTERY_SAVER_SETTINGS
-                        else -> Settings.ACTION_SETTINGS
-                    }
-                    startActivity(Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                    return ClientToolResult.success("Sozlamalar ochildi")
-                }
-            }
+            "open_youtube" to openTool("YouTube"),
+            "open_telegram" to openTool("Telegram"),
+            "open_instagram" to openTool("Instagram"),
+            "open_chrome" to openTool("Chrome"),
+            "open_camera" to openTool("Camera"),
+            "open_maps" to openTool("Maps"),
+            "open_wifi_settings" to settingsTool(Settings.ACTION_WIFI_SETTINGS),
+            "open_bluetooth_settings" to settingsTool(Settings.ACTION_BLUETOOTH_SETTINGS)
         )
         val config = ConversationConfig(
             agentId = agentId,
@@ -146,6 +95,20 @@ class ZenoVoiceService : Service() {
                 broadcastStatus("Ulanish xatosi: " + (e.localizedMessage ?: "noma'lum xato"))
                 stopSelf()
             }
+        }
+    }
+
+    private fun openTool(appName: String) = object : ClientTool {
+        override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
+            val opened = openApp(appName)
+            return if (opened) ClientToolResult.success(appName + " opened") else ClientToolResult.failure(appName + " is not installed")
+        }
+    }
+
+    private fun settingsTool(action: String) = object : ClientTool {
+        override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
+            startActivity(Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return ClientToolResult.success("Settings opened")
         }
     }
 
