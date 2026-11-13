@@ -2,26 +2,24 @@ package com.zeno.assistant
 
 import android.Manifest
 import android.app.Activity
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Bundle
-import android.provider.AlarmClock
-import android.speech.RecognizerIntent
-import android.speech.tts.TextToSpeech
-import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
-import java.util.Locale
+import android.widget.Toast
+import io.elevenlabs.ConversationClient
+import io.elevenlabs.ConversationConfig
+import io.elevenlabs.ConversationSession
 
-class MainActivity : Activity(), TextToSpeech.OnInitListener {
+class MainActivity : Activity() {
     private lateinit var status: TextView
     private lateinit var chatLog: TextView
     private lateinit var messageInput: EditText
-    private lateinit var tts: TextToSpeech
-    private val speechRequest = 101
+    private var session: ConversationSession? = null
+    private var pendingMessage: String? = null
     private val permissionRequest = 102
+    private val agentId = "agent_1001m784hww0ftstymy60zkrtx6b"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,25 +27,19 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         status = findViewById(R.id.statusText)
         chatLog = findViewById(R.id.chatLog)
         messageInput = findViewById(R.id.messageInput)
-        tts = TextToSpeech(this, this)
-        findViewById<Button>(R.id.listenButton).setOnClickListener { listen() }
+
+        findViewById<Button>(R.id.listenButton).setOnClickListener { toggleVoiceSession() }
         findViewById<Button>(R.id.sendButton).setOnClickListener { sendMessage() }
-        findViewById<Button>(R.id.appsButton).setOnClickListener { messageInput.setText("YouTube och"); messageInput.setSelection(messageInput.text.length) }
-        findViewById<Button>(R.id.searchButton).setOnClickListener {
-            messageInput.setText("Internetdan qidir ")
-            messageInput.setSelection(messageInput.text.length)
-        }
-        findViewById<Button>(R.id.alarmButton).setOnClickListener { messageInput.setText("Budilnik 07:00"); messageInput.setSelection(messageInput.text.length) }
-        findViewById<Button>(R.id.timerButton).setOnClickListener { messageInput.setText("Taymer 10 daqiqa"); messageInput.setSelection(messageInput.text.length) }
+        findViewById<Button>(R.id.appsButton).setOnClickListener { fill("YouTube ilovasini och") }
+        findViewById<Button>(R.id.searchButton).setOnClickListener { fill("Internetdan qidir: ") }
+        findViewById<Button>(R.id.alarmButton).setOnClickListener { fill("Ertalab soat 07:00 ga budilnik qo‘y") }
+        findViewById<Button>(R.id.timerButton).setOnClickListener { fill("10 daqiqaga taymer qo‘y") }
+        appendChat("ZENO", "Assalomu alaykum. Men ZENOman. O‘zbekcha yoki inglizcha yozing yoki ovozli suhbatni boshlang.")
     }
 
-    override fun onInit(result: Int) {
-        if (result == TextToSpeech.SUCCESS) {
-            val uz = tts.setLanguage(Locale("uz", "UZ"))
-            if (uz == TextToSpeech.LANG_MISSING_DATA || uz == TextToSpeech.LANG_NOT_SUPPORTED) {
-                tts.language = Locale("ru", "RU")
-            }
-        }
+    private fun fill(value: String) {
+        messageInput.setText(value)
+        messageInput.setSelection(messageInput.text.length)
     }
 
     private fun sendMessage() {
@@ -55,7 +47,80 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         if (message.isEmpty()) return
         appendChat("Siz", message)
         messageInput.text.clear()
-        handleCommand(message.lowercase(Locale("uz", "UZ")))
+        val active = session
+        if (active != null) {
+            active.sendUserMessage(message)
+        } else {
+            pendingMessage = message
+            startVoiceSession()
+        }
+    }
+
+    private fun toggleVoiceSession() {
+        if (session != null) {
+            session?.endSession()
+            session = null
+            status.text = "Ulandi uzildi"
+            findViewById<Button>(R.id.listenButton).text = "OVOZLI SUHBAT"
+        } else {
+            startVoiceSession()
+        }
+    }
+
+    private fun startVoiceSession() {
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), permissionRequest)
+            return
+        }
+        if (session != null) return
+
+        status.text = "ZENO ulanmoqda..."
+        findViewById<Button>(R.id.listenButton).text = "ULANMOQDA..."
+        try {
+            val config = ConversationConfig(
+                agentId = agentId,
+                onConnect = { _ ->
+                    runOnUiThread {
+                        status.text = "ZENO tinglayapti"
+                        findViewById<Button>(R.id.listenButton).text = "SUHBATNI TUGATISH"
+                        pendingMessage?.let {
+                            session?.sendUserMessage(it)
+                            pendingMessage = null
+                        }
+                    }
+                },
+                onDisconnect = { reason ->
+                    runOnUiThread {
+                        session = null
+                        status.text = "Aloqa uzildi"
+                        findViewById<Button>(R.id.listenButton).text = "OVOZLI SUHBAT"
+                        if (reason.toString().contains("Error", ignoreCase = true)) {
+                            Toast.makeText(this, "Ulanishda xatolik. Internetni tekshiring.", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                },
+                onUserTranscriptEvent = { text, _ ->
+                    runOnUiThread { if (text.isNotBlank()) appendChat("Siz (ovoz)", text) }
+                },
+                onAgentResponseEvent = { text, _ ->
+                    runOnUiThread {
+                        if (text.isNotBlank()) {
+                            appendChat("ZENO", text)
+                            status.text = "ZENO tinglayapti"
+                        }
+                    }
+                },
+                onModeChange = { mode ->
+                    runOnUiThread { status.text = if (mode.toString().contains("SPEAKING")) "ZENO gapiryapti" else "ZENO tinglayapti" }
+                }
+            )
+            session = ConversationClient.startSession(config, this)
+        } catch (e: Exception) {
+            session = null
+            status.text = "Ulanish amalga oshmadi"
+            findViewById<Button>(R.id.listenButton).text = "QAYTA URINISH"
+            Toast.makeText(this, e.localizedMessage ?: "ZENO serveriga ulanib bo‘lmadi", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun appendChat(sender: String, message: String) {
@@ -63,105 +128,19 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         chatLog.text = (if (current.isBlank()) "" else "$current\n\n") + "$sender\n$message"
     }
 
-    private fun listen() {
-        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), permissionRequest)
-            return
-        }
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, "uz-UZ")
-            putExtra(RecognizerIntent.EXTRA_PROMPT, "ZENO sizni tinglayapti")
-        }
-        try { startActivityForResult(intent, speechRequest) }
-        catch (_: Exception) { say("Ovoz tanish xizmati topilmadi") }
-    }
-
-    @Deprecated("Legacy speech activity result API")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == speechRequest && resultCode == RESULT_OK) {
-            val phrase = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull().orEmpty()
-            if (phrase.isNotBlank()) {
-                appendChat("Siz (ovoz)", phrase)
-                handleCommand(phrase.lowercase(Locale("uz", "UZ")))
-            }
-        }
-    }
-
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == permissionRequest && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) listen()
-        else say("Mikrofon ruxsati berilmadi")
-    }
-
-    private fun handleCommand(raw: String) {
-        when {
-            raw.contains("mobile legends") || raw.contains("mlbb") -> openApp("Mobile Legends")
-            raw.contains("budilnik") || raw.contains("alarm") -> setAlarm(raw)
-            raw.contains("taymer") || raw.contains("timer") -> setTimer(raw)
-            raw.startsWith("qo'ng'iroq") || raw.startsWith("qo‘ng‘iroq") || raw.startsWith("telefon qil") -> {
-                val number = raw.filter { it.isDigit() || it == '+' }
-                if (number.isNotBlank()) startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$number")))
-                else say("Raqamni ayting yoki kontaktni telefon ilovasidan tanlang")
-            }
-            raw.startsWith("sms") || raw.contains("xabar yoz") -> {
-                startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:")))
-                say("Xabar oynasini ochdim. Matnni tekshirib, o‘zingiz yuboring")
-            }
-            raw.startsWith("qidir") || raw.contains("google") || raw.contains("internetdan") -> {
-                val query = raw.replace("google dan", "").replace("google'dan", "").replace("qidir", "").replace("internetdan", "").trim()
-                startActivity(Intent(Intent.ACTION_WEB_SEARCH).putExtra("query", query.ifBlank { raw }))
-                say("Qidiruvni ochdim")
-            }
-            raw.contains("och") -> openApp(raw.removeSuffix("ni och").removeSuffix("ni ochib ber").trim())
-            else -> say("Hozircha men telefon buyruqlarini bajara olaman. Ilova ochish, internetdan qidirish, budilnik yoki taymerni sinab ko‘ring. AI suhbat moduli keyingi bosqichda ulanadi.")
+        if (requestCode == permissionRequest && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
+            startVoiceSession()
+        } else if (requestCode == permissionRequest) {
+            status.text = "Mikrofon ruxsati kerak"
+            Toast.makeText(this, "Ovozli suhbat uchun mikrofon ruxsatini bering.", Toast.LENGTH_LONG).show()
         }
-    }
-
-    private fun openApp(label: String) {
-        val pm = packageManager
-        val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        val matches = pm.queryIntentActivities(launcher, 0)
-        val target = matches.firstOrNull {
-            it.loadLabel(pm).toString().contains(label, ignoreCase = true) ||
-                (label.contains("mobile", true) && it.activityInfo.packageName.contains("mobile", true))
-        }
-        if (target != null) {
-            val launch = pm.getLaunchIntentForPackage(target.activityInfo.packageName)
-            if (launch != null) { startActivity(launch); say("Ilovani ochyapman"); return }
-        }
-        say("Ilovani topa olmadim")
-    }
-
-    private fun setAlarm(raw: String) {
-        val match = Regex("(\\d{1,2})[:.](\\d{2})").find(raw)
-        if (match == null) { say("Vaqtni masalan, 07:00 ko‘rinishida kiriting"); return }
-        val hour = match.groupValues[1].toIntOrNull() ?: return
-        val minute = match.groupValues[2].toIntOrNull() ?: return
-        if (hour !in 0..23 || minute !in 0..59) { say("Vaqt noto‘g‘ri"); return }
-        startActivity(Intent(AlarmClock.ACTION_SET_ALARM).putExtra(AlarmClock.EXTRA_HOUR, hour)
-            .putExtra(AlarmClock.EXTRA_MINUTES, minute).putExtra(AlarmClock.EXTRA_MESSAGE, "ZENO"))
-        say("Budilnik sozlash oynasini ochdim")
-    }
-
-    private fun setTimer(raw: String) {
-        val amount = Regex("(\\d+)").find(raw)?.value?.toIntOrNull()
-        if (amount == null || amount <= 0) { say("Necha daqiqalik taymer kerak?"); return }
-        val seconds = if (raw.contains("soniya")) amount else amount * 60
-        startActivity(Intent(AlarmClock.ACTION_SET_TIMER).putExtra(AlarmClock.EXTRA_LENGTH, seconds)
-            .putExtra(AlarmClock.EXTRA_MESSAGE, "ZENO taymeri").putExtra(AlarmClock.EXTRA_SKIP_UI, false))
-        say("Taymer oynasini ochdim")
-    }
-
-    private fun say(message: String) {
-        status.text = message
-        appendChat("ZENO", message)
-        if (::tts.isInitialized) tts.speak(message, TextToSpeech.QUEUE_FLUSH, null, "zeno_reply")
     }
 
     override fun onDestroy() {
-        if (::tts.isInitialized) { tts.stop(); tts.shutdown() }
+        session?.endSession()
+        session = null
         super.onDestroy()
     }
 }
