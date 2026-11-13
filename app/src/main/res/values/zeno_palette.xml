@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <color name="zeno_background">#05050B</color>
-    <color name="zeno_surface">#171326</color>
-    <color name="zeno_purple">#9A55FF</color>
-    <color name="zeno_lavender">#C3A4FF</color>
-    <color name="zeno_text">#F5F1FF</color>
-    <color name="zeno_muted">#958BAF</color>
-</resources>
