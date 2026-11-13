@@ -135,6 +135,7 @@ class ZenoVoiceService : Service() {
             return
         }
         if (wakeListening) return
+        wakeListening = true
         handler.postDelayed({
             if (session == null && !isFinishingService()) {
                 try {
@@ -144,7 +145,6 @@ class ZenoVoiceService : Service() {
                         putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "uz-UZ")
                         putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                         putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
-                        putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
                     }
                     speechRecognizer?.startListening(intent)
                 } catch (_: Exception) {
