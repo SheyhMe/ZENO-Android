@@ -50,7 +50,7 @@ class MainActivity : Activity() {
                         !status.text.toString().contains("uzildi") &&
                         !status.text.toString().contains("xatosi")
                     findViewById<Button>(R.id.listenButton).text =
-                        if (voiceActive) "TINGLASHNI TO'XTATISH" else "OVOZLI SUHBATNI BOSHLASH"
+                        if (voiceActive) "HEY ZENO — O'CHIRISH" else "HEY ZENO — YOQISH"
                 }
                 ZenoVoiceService.ACTION_TRANSCRIPT -> {
                     appendChat(intent.getStringExtra("sender") ?: "ZENO", intent.getStringExtra(ZenoVoiceService.EXTRA_TEXT) ?: "")
@@ -138,7 +138,7 @@ class MainActivity : Activity() {
         if (voiceActive) {
             startService(Intent(this, ZenoVoiceService::class.java).setAction(ZenoVoiceService.ACTION_STOP))
             voiceActive = false
-            status.text = "Tinglash to'xtatilmoqda..."
+            status.text = "Hey ZENO tinglashi to'xtatilmoqda..."
             return
         }
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
@@ -147,7 +147,7 @@ class MainActivity : Activity() {
         }
         val intent = Intent(this, ZenoVoiceService::class.java).setAction(ZenoVoiceService.ACTION_START)
         if (Build.VERSION.SDK_INT >= 26) startForegroundService(intent) else startService(intent)
-        status.text = "ZENO ulanmoqda..."
+        status.text = "“Hey ZENO” faollashtirilmoqda..."
     }
 
     private fun sendMessage() {
