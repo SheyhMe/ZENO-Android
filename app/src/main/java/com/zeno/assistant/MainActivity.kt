@@ -671,8 +671,14 @@ class MainActivity : AppCompatActivity() {
         textScope.launch {
             try {
                 var response = cloudRepository.sendAiMessage(context)
-                if (response.actions.isNotEmpty()) {
-                    val actionsToRun = response.actions.take(6)
+                val executedCalls = mutableListOf<ZenoAiAction>()
+                val executedResults = mutableListOf<ZenoAiToolResult>()
+                var actionRounds = 0
+
+                // Allow the model to plan and verify a short chain of device actions.
+                // Keep a hard limit so a malformed tool loop cannot run indefinitely.
+                while (response.actions.isNotEmpty() && executedCalls.size < 6 && actionRounds < 4) {
+                    val actionsToRun = response.actions.take(6 - executedCalls.size)
                     val actionResults = actionsToRun.map { action ->
                         val tool = AndroidActionTools.create(this@MainActivity)[action.name]
                         val result = try {
@@ -682,15 +688,25 @@ class MainActivity : AppCompatActivity() {
                         }
                         val output = when {
                             tool == null -> "Bu amal qurilmada qo‘llab-quvvatlanmaydi."
-                            result == null -> "Amal qurilmaga yuborildi."
+                            result == null -> "Amal bajarilgani tasdiqlanmadi."
                             result.success -> result.result
                             else -> result.error ?: "Amal bajarilmadi."
                         }
                         ZenoAiToolResult(action.callId, output)
                     }
-                    response = cloudRepository.sendAiMessage(context, actionsToRun, actionResults)
+                    executedCalls.addAll(actionsToRun)
+                    executedResults.addAll(actionResults)
+                    actionRounds += 1
+                    response = cloudRepository.sendAiMessage(context, executedCalls, executedResults)
                 }
-                appendChat("ZENO", response.reply.ifBlank { "Amal bajarildi." })
+
+                val finalReply = when {
+                    response.reply.isNotBlank() -> response.reply
+                    response.actions.isNotEmpty() -> "Amallar ketma-ketligi xavfsizlik chegarasiga yetdi. Qolgan buyruqlar bajarilmadi."
+                    executedCalls.isNotEmpty() -> "So‘ralgan amal(lar) bajarildi va natijasi tekshirildi."
+                    else -> "ZENO javobi bo‘sh qaytdi. Qayta urinib ko‘ring."
+                }
+                appendChat("ZENO", finalReply)
                 status.text = "ZENO AI tayyor"
             } catch (e: Exception) {
                 appendChat("ZENO", e.localizedMessage ?: "AI bilan bog‘lanib bo‘lmadi.")
