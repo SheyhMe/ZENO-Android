@@ -185,7 +185,14 @@ class ZenoVoiceService : Service() {
             "close_current_app" to homeTool(),
             "exit_app" to homeTool(),
             "open_wifi_settings" to settingsTool(Settings.ACTION_WIFI_SETTINGS),
-            "open_bluetooth_settings" to settingsTool(Settings.ACTION_BLUETOOTH_SETTINGS)
+            "open_bluetooth_settings" to settingsTool(Settings.ACTION_BLUETOOTH_SETTINGS),
+            "search_google" to searchTool(),
+            "set_alarm" to alarmTool(),
+            "set_timer" to timerTool(),
+            "open_maps" to mapsTool(),
+            "open_dialer" to dialerTool(),
+            "compose_sms" to smsTool(),
+            "open_calendar" to calendarTool()
         )
         val config = ConversationConfig(
             agentId = agentId,
@@ -270,6 +277,89 @@ class ZenoVoiceService : Service() {
         override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
             startActivity(Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             return ClientToolResult.success("Sozlamalar ochildi")
+        }
+    }
+
+
+
+    private fun searchTool() = object : ClientTool {
+        override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
+            val query = (parameters["query"] ?: parameters["search_query"] ?: "").toString().trim()
+            if (query.isBlank()) return ClientToolResult.failure("Qidiruv so'rovi bo'sh")
+            val uri = android.net.Uri.parse("https://www.google.com/search?q=" + android.net.Uri.encode(query))
+            startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return ClientToolResult.success("Google qidiruvi ochildi: " + query)
+        }
+    }
+
+    private fun alarmTool() = object : ClientTool {
+        override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
+            val hour = (parameters["hour"]?.toString()?.toIntOrNull() ?: 7).coerceIn(0, 23)
+            val minute = (parameters["minute"]?.toString()?.toIntOrNull() ?: 0).coerceIn(0, 59)
+            val intent = Intent(android.provider.AlarmClock.ACTION_SET_ALARM)
+                .putExtra(android.provider.AlarmClock.EXTRA_HOUR, hour)
+                .putExtra(android.provider.AlarmClock.EXTRA_MINUTES, minute)
+                .putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, "ZENO")
+                .putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, false)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+            return ClientToolResult.success("Budilnik sozlash oynasi ochildi; foydalanuvchi tasdiqlashi kerak")
+        }
+    }
+
+    private fun timerTool() = object : ClientTool {
+        override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
+            val seconds = (parameters["seconds"]?.toString()?.toIntOrNull() ?: 600).coerceIn(1, 86400)
+            val intent = Intent(android.provider.AlarmClock.ACTION_SET_TIMER)
+                .putExtra(android.provider.AlarmClock.EXTRA_LENGTH, seconds)
+                .putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, "ZENO")
+                .putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, false)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+            return ClientToolResult.success("Taymer sozlash oynasi ochildi; foydalanuvchi tasdiqlashi kerak")
+        }
+    }
+
+    private fun mapsTool() = object : ClientTool {
+        override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
+            val destination = (parameters["destination"] ?: parameters["query"] ?: "").toString().trim()
+            val uri = if (destination.isBlank()) android.net.Uri.parse("geo:0,0?q=")
+                else android.net.Uri.parse("google.navigation:q=" + android.net.Uri.encode(destination))
+            val intent = Intent(Intent.ACTION_VIEW, uri).setPackage("com.google.android.apps.maps")
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+            return ClientToolResult.success("Xarita ochildi")
+        }
+    }
+
+    private fun dialerTool() = object : ClientTool {
+        override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
+            val number = (parameters["phone_number"] ?: parameters["number"] ?: "").toString()
+            startActivity(Intent(Intent.ACTION_DIAL, android.net.Uri.parse("tel:" + number))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return ClientToolResult.success("Terish oynasi ochildi; qo'ng'iroqni foydalanuvchi tasdiqlaydi")
+        }
+    }
+
+    private fun smsTool() = object : ClientTool {
+        override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
+            val number = (parameters["phone_number"] ?: parameters["number"] ?: "").toString()
+            val body = (parameters["message"] ?: "").toString()
+            startActivity(Intent(Intent.ACTION_SENDTO, android.net.Uri.parse("smsto:" + number))
+                .putExtra("sms_body", body).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return ClientToolResult.success("SMS yozish oynasi ochildi; yuborish foydalanuvchi tasdig'ida")
+        }
+    }
+
+    private fun calendarTool() = object : ClientTool {
+        override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
+            val title = (parameters["title"] ?: "ZENO eslatma").toString()
+            val intent = Intent(Intent.ACTION_INSERT)
+                .setData(android.provider.CalendarContract.Events.CONTENT_URI)
+                .putExtra(android.provider.CalendarContract.Events.TITLE, title)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+            return ClientToolResult.success("Kalendar tadbir yaratish oynasi ochildi")
         }
     }
 
