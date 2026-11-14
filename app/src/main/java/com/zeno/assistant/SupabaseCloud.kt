@@ -19,6 +19,9 @@ object SupabaseCloud {
     fun isSignedIn(context: Context): Boolean =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(TOKEN, null) != null
 
+    fun currentUserId(context: Context): String? =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(USER_ID, null)
+
     fun signIn(context: Context, email: String, password: String): String {
         val response = request(context, "/auth/v1/token?grant_type=password", "POST",
             JSONObject().put("email", email).put("password", password), authenticated = false)
@@ -36,9 +39,26 @@ object SupabaseCloud {
         return "Hisob yaratildi. Emailingizga yuborilgan tasdiqlash havolasini oching, so'ng tizimga kiring."
     }
 
-    /** Local sign-out is immediate and does not block the Android UI thread. */
+    /** Clear local credentials immediately; revoke the server session in the background. */
     fun signOut(context: Context) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().apply()
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val token = prefs.getString(TOKEN, null)
+        prefs.edit().clear().apply()
+        if (!token.isNullOrBlank()) {
+            Thread {
+                val connection = try {
+                    (URL("$BASE_URL/auth/v1/logout").openConnection() as HttpURLConnection).apply {
+                        requestMethod = "POST"
+                        connectTimeout = 8000
+                        readTimeout = 8000
+                        setRequestProperty("apikey", PUBLISHABLE_KEY)
+                        setRequestProperty("Authorization", "Bearer $token")
+                        setRequestProperty("Content-Type", "application/json")
+                    }
+                } catch (_: Exception) { null }
+                try { connection?.responseCode } catch (_: Exception) { } finally { connection?.disconnect() }
+            }.start()
+        }
     }
 
     @Synchronized
