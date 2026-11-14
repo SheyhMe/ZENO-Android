@@ -80,8 +80,18 @@ object LocalCommandRouter {
                     context.startActivity(Intent(Intent.ACTION_INSERT).setData(CalendarContract.Events.CONTENT_URI).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                     "Kalendar tadbir qo'shish oynasi ochildi."
                 }
-                normalized.startsWith("och ") || normalized.startsWith("open ") || normalized.startsWith("ilovani och") -> {
-                    val app = text.substringAfter(" ").removePrefix("ilovani ").removePrefix("och").trim()
+                normalized.startsWith("och ") || normalized.startsWith("open ") ||
+                    normalized.startsWith("ilovani och") || normalized.contains(" ilovasini och") ||
+                    normalized.endsWith("ni och") || normalized.endsWith("ga kir") -> {
+                    val app = when {
+                        normalized.startsWith("och ") -> text.substringAfter(" ").trim()
+                        normalized.startsWith("open ") -> text.substringAfter(" ").trim()
+                        normalized.startsWith("ilovani och") -> text.substringAfter("ilovani och").trim()
+                        normalized.contains(" ilovasini och") -> text.substringBefore(" ilovasini och").trim()
+                        normalized.endsWith("ni och") -> text.dropLast(6).trim()
+                        normalized.endsWith("ga kir") -> text.dropLast(6).trim()
+                        else -> ""
+                    }
                     if (app.isBlank()) return "Qaysi ilovani ochay?"
                     if (launchByLabel(context, app)) "$app ilovasi ochildi." else "“$app” ilovasi topilmadi."
                 }
