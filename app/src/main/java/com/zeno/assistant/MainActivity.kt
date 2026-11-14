@@ -220,12 +220,22 @@ class MainActivity : Activity() {
         val localReply = LocalCommandRouter.execute(this, message)
         if (localReply != null) {
             appendChat("ZENO", localReply)
+            speakVoiceReply(localReply)
             return
         }
 
         aiInput.put(JSONObject().put("role", "user").put("content", message))
         saveAiContext()
         requestAiResponse(0)
+    }
+
+    private fun speakVoiceReply(message: String) {
+        if (!voiceActive || message.isBlank()) return
+        try {
+            startService(Intent(this, ZenoVoiceService::class.java)
+                .setAction(ZenoVoiceService.ACTION_SPEAK)
+                .putExtra(ZenoVoiceService.EXTRA_TEXT, message))
+        } catch (_: Exception) { }
     }
 
     private fun saveAiContext() {
@@ -267,12 +277,15 @@ class MainActivity : Activity() {
 
                 saveAiContext()
                 val answer = extractAiText(output)
-                if (answer.isNotBlank()) appendChat("ZENO", answer)
-                else appendChat("ZENO", if (calls.isNotEmpty()) "Amal bajarildi, lekin javob matni kelmadi." else "Javob bo‘sh qaytdi. Qayta urinib ko‘ring.")
+                val spokenAnswer = if (answer.isNotBlank()) answer else if (calls.isNotEmpty()) "Amal bajarildi." else "Javob bo‘sh qaytdi. Qayta urinib ko‘ring."
+                appendChat("ZENO", spokenAnswer)
+                speakVoiceReply(spokenAnswer)
                 status.text = "ZENO tayyor"
             } catch (error: Exception) {
                 val message = error.localizedMessage ?: "Aloqa xatosi"
-                appendChat("ZENO", "AI ulanishida xatolik: $message")
+                val errorReply = "AI ulanishida xatolik: $message"
+                appendChat("ZENO", errorReply)
+                speakVoiceReply(errorReply)
                 status.text = "AI ulanish xatosi"
             }
         }
