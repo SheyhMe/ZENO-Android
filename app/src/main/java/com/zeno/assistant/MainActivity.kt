@@ -40,6 +40,7 @@ class MainActivity : Activity() {
     private val agentId = "agent_1001m784hww0ftstymy60zkrtx6b"
     private var orbPulse: ObjectAnimator? = null
     private val permissionRequest = 102
+    private val historyPrefs by lazy { getSharedPreferences("zeno_history", MODE_PRIVATE) }
 
     private val voiceReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -110,7 +111,8 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.navVoice).setOnClickListener { showPage(R.id.voicePage) }
         findViewById<Button>(R.id.navProfile).setOnClickListener { showPage(R.id.profilePage) }
 
-        appendChat("ZENO", "Assalomu alaykum. Men ZENOman. Avval yozishib tanishamiz — xohlasangiz keyin ovozli suhbatni yoqishingiz mumkin.")
+        val savedHistory = historyPrefs.getString("chat", "").orEmpty()
+        if (savedHistory.isNotBlank()) chatLog.text = savedHistory else appendChat("ZENO", "Assalomu alaykum. Men ZENOman. Sizga qanday yordam bera olaman?")
     }
 
     private fun showPage(pageId: Int) {
@@ -159,6 +161,11 @@ class MainActivity : Activity() {
         if (message.isEmpty()) return
         appendChat("Siz", message)
         messageInput.text.clear()
+        val localReply = LocalCommandRouter.execute(this, message)
+        if (localReply != null) {
+            appendChat("ZENO", localReply)
+            return
+        }
         if (voiceActive) {
             startService(Intent(this, ZenoVoiceService::class.java)
                 .setAction(ZenoVoiceService.ACTION_SEND)
@@ -220,7 +227,8 @@ class MainActivity : Activity() {
         if (message.isBlank()) return
         val current = chatLog.text.toString()
         val updated = (if (current.isBlank()) "" else "$current\n\n") + "$sender\n$message"
-        chatLog.text = if (updated.length > 6000) updated.takeLast(6000) else updated
+        chatLog.text = if (updated.length > 12000) updated.takeLast(12000) else updated
+        historyPrefs.edit().putString("chat", chatLog.text.toString()).apply()
     }
 
     override fun onDestroy() {
