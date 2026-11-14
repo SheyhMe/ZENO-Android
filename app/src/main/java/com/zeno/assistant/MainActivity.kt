@@ -197,13 +197,8 @@ class MainActivity : Activity() {
             appendChat("ZENO • Kiberxavfsizlik", cyberReply)
             return
         }
-        if (voiceActive) {
-            startService(Intent(this, ZenoVoiceService::class.java)
-                .setAction(ZenoVoiceService.ACTION_SEND)
-                .putExtra(ZenoVoiceService.EXTRA_TEXT, message))
-        } else {
-            sendTextMessage(message)
-        }
+        // Text chat always uses its own session; wake-word listening must not swallow typed messages.
+        sendTextMessage(message)
     }
 
     private fun sendTextMessage(message: String) {
