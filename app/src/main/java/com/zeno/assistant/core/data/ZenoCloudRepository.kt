@@ -87,6 +87,7 @@ private class AndroidEncryptedSessionManager(context: Context) : SessionManager 
 
     override suspend fun deleteSession() = withContext(Dispatchers.IO) {
         preferences.edit().remove("session").commit()
+        Unit
     }
 
     private fun getOrCreateKey(): SecretKey {
