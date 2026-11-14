@@ -191,6 +191,11 @@
                     android:background="@drawable/zeno_surface"
                     android:text="ZENO — shaxsiy AI yordamchingiz&#10;&#10;Til: O‘zbek / English&#10;Mavzu: Telefon sozlamasiga mos&#10;AI Chat: Matnli rejim&#10;Ovoz: Ixtiyoriy&#10;Wake word: Hey ZENO"
                     android:textColor="@color/zeno_text" android:textSize="14sp" android:lineSpacingExtra="7dp"/>
+                <Button android:id="@+id/accountButton" android:layout_width="match_parent"
+                    android:layout_height="52dp" android:layout_marginTop="12dp"
+                    android:background="@drawable/zeno_primary_button"
+                    android:text="☁  ZENO Cloud — Kirish"
+                    android:textAllCaps="false" android:textColor="@color/zeno_text"/>
                 <Button android:id="@+id/themeButton" android:layout_width="match_parent"
                     android:layout_height="52dp" android:layout_marginTop="12dp"
                     android:background="@drawable/zeno_surface" android:text="Mavzu: Avtomatik"
