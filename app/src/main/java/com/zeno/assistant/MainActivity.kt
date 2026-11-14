@@ -37,6 +37,7 @@ import android.text.TextWatcher
 import java.util.Locale
 import com.zeno.assistant.core.data.ZenoAiAction
 import com.zeno.assistant.core.data.ZenoAiToolResult
+import com.zeno.assistant.core.data.CloudMemory
 
 class MainActivity : AppCompatActivity() {
     private lateinit var status: TextView
@@ -126,6 +127,7 @@ class MainActivity : AppCompatActivity() {
                 Uri.parse("package:$packageName")))
         }
         findViewById<Button>(R.id.accountButton).setOnClickListener { showAccountDialog() }
+        findViewById<Button>(R.id.memoryButton).setOnClickListener { showMemoriesDialog() }
         val appsSearch = findViewById<EditText>(R.id.appsSearchInput)
         appsSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -453,6 +455,112 @@ class MainActivity : AppCompatActivity() {
             }
         }
         dialog.show()
+    }
+
+    private fun showMemoriesDialog() {
+        if (!cloudRepository.isSignedIn()) {
+            AlertDialog.Builder(this)
+                .setTitle("ZENO Xotiralar")
+                .setMessage("Xotiralarni saqlash va boshqarish uchun avval ZENO Cloud hisobiga kiring.")
+                .setPositiveButton("Kirish") { _, _ -> showAccountDialog() }
+                .setNegativeButton("Yopish", null)
+                .show()
+            return
+        }
+        textScope.launch {
+            try {
+                val memories = cloudRepository.loadMemories()
+                val english = preferences.getString("language", "uz") == "en"
+                val labels = memories.map { "${it.category}: ${it.content}" }.toTypedArray()
+                AlertDialog.Builder(this@MainActivity)
+                    .setTitle(if (english) "ZENO Memories" else "ZENO Xotiralar")
+                    .setItems(labels) { _, which ->
+                        if (which in memories.indices) showMemoryActions(memories[which])
+                    }
+                    .setPositiveButton(if (english) "Add memory" else "Xotira qo‘shish") { _, _ ->
+                        showAddMemoryDialog()
+                    }
+                    .setNegativeButton(if (english) "Close" else "Yopish", null)
+                    .show()
+            } catch (e: Exception) {
+                Toast.makeText(this@MainActivity, e.localizedMessage ?: "Xotiralarni yuklab bo‘lmadi", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun showMemoryActions(memory: CloudMemory) {
+        val english = preferences.getString("language", "uz") == "en"
+        AlertDialog.Builder(this)
+            .setTitle(memory.category)
+            .setMessage(memory.content)
+            .setPositiveButton(if (english) "Edit" else "Tahrirlash") { _, _ ->
+                showEditMemoryDialog(memory)
+            }
+            .setNegativeButton(if (english) "Delete" else "O‘chirish") { _, _ ->
+                textScope.launch {
+                    try {
+                        cloudRepository.deleteMemory(memory.id)
+                        Toast.makeText(this@MainActivity, if (english) "Memory deleted" else "Xotira o‘chirildi", Toast.LENGTH_SHORT).show()
+                        showMemoriesDialog()
+                    } catch (e: Exception) {
+                        Toast.makeText(this@MainActivity, e.localizedMessage ?: "Xotirani o‘chirib bo‘lmadi", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+            .setNeutralButton(if (english) "Close" else "Yopish", null)
+            .show()
+    }
+
+    private fun showAddMemoryDialog() {
+        val english = preferences.getString("language", "uz") == "en"
+        val input = EditText(this).apply {
+            hint = if (english) "What should ZENO remember?" else "ZENO nimani eslab qolsin?"
+            minLines = 2
+            maxLines = 5
+            setPadding(36, 24, 36, 24)
+        }
+        AlertDialog.Builder(this)
+            .setTitle(if (english) "Add memory" else "Xotira qo‘shish")
+            .setView(input)
+            .setPositiveButton(if (english) "Save" else "Saqlash") { _, _ ->
+                textScope.launch {
+                    try {
+                        cloudRepository.addMemory(input.text.toString())
+                        Toast.makeText(this@MainActivity, if (english) "Memory saved" else "Xotira saqlandi", Toast.LENGTH_SHORT).show()
+                        showMemoriesDialog()
+                    } catch (e: Exception) {
+                        Toast.makeText(this@MainActivity, e.localizedMessage ?: "Xotirani saqlab bo‘lmadi", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+            .setNegativeButton(if (english) "Cancel" else "Bekor qilish", null)
+            .show()
+    }
+
+    private fun showEditMemoryDialog(memory: CloudMemory) {
+        val english = preferences.getString("language", "uz") == "en"
+        val input = EditText(this).apply {
+            setText(memory.content)
+            minLines = 2
+            maxLines = 5
+            setPadding(36, 24, 36, 24)
+        }
+        AlertDialog.Builder(this)
+            .setTitle(if (english) "Edit memory" else "Xotirani tahrirlash")
+            .setView(input)
+            .setPositiveButton(if (english) "Save" else "Saqlash") { _, _ ->
+                textScope.launch {
+                    try {
+                        cloudRepository.updateMemory(memory.id, input.text.toString(), memory.category)
+                        Toast.makeText(this@MainActivity, if (english) "Memory updated" else "Xotira yangilandi", Toast.LENGTH_SHORT).show()
+                        showMemoriesDialog()
+                    } catch (e: Exception) {
+                        Toast.makeText(this@MainActivity, e.localizedMessage ?: "Xotirani yangilab bo‘lmadi", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+            .setNegativeButton(if (english) "Cancel" else "Bekor qilish", null)
+            .show()
     }
 
     private fun applyLanguage() {
