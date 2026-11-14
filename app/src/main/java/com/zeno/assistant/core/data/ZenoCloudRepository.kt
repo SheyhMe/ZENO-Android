@@ -100,7 +100,12 @@ private class AndroidEncryptedSessionManager(context: Context) : SessionManager 
 
     private fun getOrCreateKey(): SecretKey {
         val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-        val existing = keyStore.getKey(keyAlias, null) as? SecretKey
+        val existing = try {
+            keyStore.getKey(keyAlias, null) as? SecretKey
+        } catch (_: Exception) {
+            keyStore.deleteEntry(keyAlias)
+            null
+        }
         if (existing != null) return existing
 
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
