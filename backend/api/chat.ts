@@ -30,8 +30,12 @@ function replyError(res: any, status: number, error: string) {
 export default async function handler(req: any, res: any) {
   res.setHeader("Cache-Control", "no-store");
 
+  if (req.method === "GET") {
+    return res.status(200).json({ status: "ok", service: "ZENO AI backend" });
+  }
+
   if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
+    res.setHeader("Allow", "GET, POST");
     return replyError(res, 405, "Method not allowed");
   }
 
