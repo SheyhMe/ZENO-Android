@@ -80,11 +80,8 @@ class ZenoVoiceService : Service() {
             broadcastStatus("Bu telefonda ovoz tanish xizmati mavjud emas")
             return
         }
-        if (Build.VERSION.SDK_INT >= 31 && SpeechRecognizer.isOnDeviceRecognitionAvailable(this)) {
-            speechRecognizer = SpeechRecognizer.createOnDeviceSpeechRecognizer(this)
-        } else {
-            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
-        }
+        // Use the system recognition service: on-device models often do not include Uzbek.
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
         speechRecognizer?.setRecognitionListener(object : RecognitionListener {
             override fun onReadyForSpeech(params: android.os.Bundle?) {
                 wakeListening = true
@@ -96,7 +93,9 @@ class ZenoVoiceService : Service() {
             override fun onEndOfSpeech() {}
             override fun onError(error: Int) {
                 wakeListening = false
-                restartWakeRecognizer()
+                try { speechRecognizer?.destroy() } catch (_: Exception) {}
+                speechRecognizer = null
+                if (!stopping) handler.postDelayed({ startWakeRecognizer() }, 1200)
             }
             override fun onResults(results: android.os.Bundle?) {
                 wakeListening = false
@@ -117,7 +116,13 @@ class ZenoVoiceService : Service() {
             }
             override fun onPartialResults(partialResults: android.os.Bundle?) {
                 val phrases = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION).orEmpty()
-                if (phrases.any { it.lowercase(Locale.ROOT).contains("hey zeno") || it.lowercase(Locale.ROOT).contains("hey zino") }) {
+                if (phrases.any {
+                    val normalized = it.lowercase(Locale.ROOT)
+                        .replace(Regex("[^\\p{L}\\p{N} ]"), " ")
+                        .replace(Regex("\\s+"), " ").trim()
+                    normalized.contains("hey zeno") || normalized.contains("hey zino") ||
+                        normalized.contains("эй зено") || normalized.contains("эй зино")
+                }) {
                     wakeListening = false
                     stopWakeRecognizer()
                     startAssistantTurn()
@@ -176,9 +181,9 @@ class ZenoVoiceService : Service() {
 
     private fun captureCommand() {
         if (stopping) return
-        val recognizer = if (Build.VERSION.SDK_INT >= 31 && SpeechRecognizer.isOnDeviceRecognitionAvailable(this)) {
-            SpeechRecognizer.createOnDeviceSpeechRecognizer(this)
-        } else SpeechRecognizer.createSpeechRecognizer(this)
+        // Uzbek recognition is not consistently available in Android's offline model packs.
+        // The system recognizer can use the installed Google speech service instead.
+        val recognizer = SpeechRecognizer.createSpeechRecognizer(this)
         speechRecognizer = recognizer
         recognizer.setRecognitionListener(object : RecognitionListener {
             override fun onReadyForSpeech(params: android.os.Bundle?) {
