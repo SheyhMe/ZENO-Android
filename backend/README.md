@@ -8,7 +8,8 @@ Set these Vercel Production and Preview environment variables:
 
 - `SUPABASE_URL`: ZENO Supabase project URL.
 - `SUPABASE_PUBLISHABLE_KEY`: the public Supabase publishable key.
-- `VERCEL_OIDC_TOKEN`: supplied by Vercel deployments for AI Gateway authentication; do not create or commit a static provider key for this route.
+
+Enable **Secure backend access with OIDC federation** in Vercel Project Settings → Security. Vercel injects the short-lived token into the `x-vercel-oidc-token` request header at runtime; no static AI provider key or manually configured `VERCEL_OIDC_TOKEN` variable is required.
 
 The route verifies every Supabase access token against Supabase Auth before calling AI Gateway. The Supabase service-role key is not required or used.
 
@@ -33,4 +34,4 @@ The endpoint accepts the latest 20 user/assistant messages, enforces per-message
 
 ## Deployment
 
-Create a Vercel project linked to `SheyhMe/ZENO-Android`, set its Root Directory to `backend`, and set its Production Branch to `zeno-full-upgrade`. Add the two Supabase environment variables above. Vercel OIDC supplies the Gateway request token at runtime.
+The Vercel project is linked to `SheyhMe/ZENO-Android` with Root Directory `backend`. The `zeno-full-upgrade` branch deploys automatically as a Preview and has a stable branch alias used by the Android app. Before promoting to production, set the project's Production Branch to `zeno-full-upgrade`. Add the two Supabase environment variables above and enable OIDC as described above.
