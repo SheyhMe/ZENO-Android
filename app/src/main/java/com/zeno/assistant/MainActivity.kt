@@ -257,7 +257,7 @@ class MainActivity : Activity() {
             "Taymer sozlash oynasi ochildi; tasdiqlashni Clock ilovasida bajaring."
         }
         tools["open_dialer"] = tool { p ->
-            local("qo‘ng‘iroq " + (p["phone_number"] ?: p["number"] ?: "").toString())
+            local("qo'ng'iroq " + (p["phone_number"] ?: p["number"] ?: "").toString())
         }
         tools["compose_sms"] = tool { p ->
             val number = (p["phone_number"] ?: p["number"] ?: "").toString()
