@@ -1,6 +1,12 @@
 package com.zeno.assistant.core.data
 
 import android.content.Context
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import android.util.Base64
+import io.github.jan.supabase.auth.SessionManager
+import io.github.jan.supabase.auth.exception.NoSessionFoundException
+import io.github.jan.supabase.auth.user.UserSession
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.auth.Auth
@@ -9,6 +15,9 @@ import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import java.util.UUID
 import java.time.Instant
 import kotlinx.coroutines.Dispatchers
@@ -17,6 +26,11 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.KeyStore
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
 
 /**
  * Supabase-backed identity, preferences and chat persistence.
@@ -40,6 +54,61 @@ data class ZenoAiToolResult(val callId: String, val output: String)
 
 data class ZenoAiResponse(val reply: String, val actions: List<ZenoAiAction>)
 
+private class AndroidEncryptedSessionManager(context: Context) : SessionManager {
+    private val preferences = context.applicationContext.getSharedPreferences("zeno_secure_auth", Context.MODE_PRIVATE)
+    private val json = Json { encodeDefaults = true }
+    private val keyAlias = "zeno_supabase_session_key"
+
+    override suspend fun saveSession(session: UserSession) = withContext(Dispatchers.IO) {
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey())
+        val encrypted = cipher.doFinal(json.encodeToString(session).toByteArray(Charsets.UTF_8))
+        val payload = cipher.iv + encrypted
+        check(preferences.edit().putString("session", Base64.encodeToString(payload, Base64.NO_WRAP)).commit()) {
+            "Secure session storage failed"
+        }
+    }
+
+    override suspend fun loadSession(): UserSession = withContext(Dispatchers.IO) {
+        val encoded = preferences.getString("session", null) ?: throw NoSessionFoundException()
+        try {
+            val payload = Base64.decode(encoded, Base64.NO_WRAP)
+            if (payload.size <= 12) throw NoSessionFoundException()
+            val iv = payload.copyOfRange(0, 12)
+            val encrypted = payload.copyOfRange(12, payload.size)
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.DECRYPT_MODE, getOrCreateKey(), GCMParameterSpec(128, iv))
+            json.decodeFromString(String(cipher.doFinal(encrypted), Charsets.UTF_8))
+        } catch (_: Exception) {
+            preferences.edit().remove("session").commit()
+            throw NoSessionFoundException()
+        }
+    }
+
+    override suspend fun deleteSession() = withContext(Dispatchers.IO) {
+        preferences.edit().remove("session").commit()
+    }
+
+    private fun getOrCreateKey(): SecretKey {
+        val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        val existing = keyStore.getKey(keyAlias, null) as? SecretKey
+        if (existing != null) return existing
+
+        val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
+        generator.init(
+            KeyGenParameterSpec.Builder(
+                keyAlias,
+                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+            )
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setRandomizedEncryptionRequired(true)
+                .build()
+        )
+        return generator.generateKey()
+    }
+}
+
 data class CloudMemory(
     val id: String,
     val category: String,
@@ -56,6 +125,7 @@ class ZenoCloudRepository(context: Context) {
             supabaseKey = com.zeno.assistant.BuildConfig.SUPABASE_PUBLISHABLE_KEY
         ) {
             install(Auth) {
+                sessionManager = AndroidEncryptedSessionManager(context.applicationContext)
                 alwaysAutoRefresh = true
                 autoLoadFromStorage = true
                 autoSaveToStorage = true
