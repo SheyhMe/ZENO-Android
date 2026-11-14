@@ -121,9 +121,92 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.navApps).setOnClickListener { showPage(R.id.appsPage) }
         findViewById<Button>(R.id.navVoice).setOnClickListener { showPage(R.id.voicePage) }
         findViewById<Button>(R.id.navProfile).setOnClickListener { showPage(R.id.profilePage) }
+        val accountButton = findViewById<Button>(R.id.accountButton)
+        accountButton.text = if (SupabaseCloud.isSignedIn(this)) "Hisob faol — boshqarish" else "Kirish / Roʻyxatdan oʻtish"
+        accountButton.setOnClickListener { showAccountDialog(accountButton) }
 
         val savedHistory = historyPrefs.getString("chat", "").orEmpty()
         if (savedHistory.isNotBlank()) chatLog.text = savedHistory else appendChat("ZENO", "Assalomu alaykum. Men ZENOman. Sizga qanday yordam bera olaman?")
+    }
+
+
+    private fun showAccountDialog(accountButton: Button) {
+        val email = EditText(this).apply {
+            hint = "Email"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+        }
+        val password = EditText(this).apply {
+            hint = "Parol (kamida 6 belgi)"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        val panel = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(32, 8, 32, 0)
+            addView(email)
+            addView(password)
+        }
+        val signedIn = SupabaseCloud.isSignedIn(this)
+        val dialog = android.app.AlertDialog.Builder(this)
+            .setTitle("ZENO hisob")
+            .setView(panel)
+            .setPositiveButton("Kirish", null)
+            .setNeutralButton("Roʻyxatdan oʻtish", null)
+            .setNegativeButton(if (signedIn) "Chiqish" else "Yopish", null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                submitAccount(email, password, accountButton, dialog, false)
+            }
+            dialog.getButton(android.app.AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
+                submitAccount(email, password, accountButton, dialog, true)
+            }
+            dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE).setOnClickListener {
+                if (signedIn) {
+                    SupabaseCloud.signOut(this)
+                    accountButton.text = "Kirish / Roʻyxatdan oʻtish"
+                    Toast.makeText(this, "Hisobdan chiqildi.", Toast.LENGTH_SHORT).show()
+                }
+                dialog.dismiss()
+            }
+        }
+        dialog.show()
+    }
+
+    private fun submitAccount(
+        emailField: EditText,
+        passwordField: EditText,
+        accountButton: Button,
+        dialog: android.app.AlertDialog,
+        createAccount: Boolean
+    ) {
+        val email = emailField.text.toString().trim()
+        val password = passwordField.text.toString()
+        if (email.isBlank() || password.length < 6) {
+            Toast.makeText(this, "Email va kamida 6 belgili parol kiriting.", Toast.LENGTH_LONG).show()
+            return
+        }
+        textScope.launch {
+            try {
+                val message = kotlinx.coroutines.withContext(Dispatchers.IO) {
+                    if (createAccount) SupabaseCloud.signUp(this@MainActivity, email, password)
+                    else SupabaseCloud.signIn(this@MainActivity, email, password)
+                }
+                Toast.makeText(this@MainActivity, message, Toast.LENGTH_LONG).show()
+                if (SupabaseCloud.isSignedIn(this@MainActivity)) {
+                    accountButton.text = "Hisob faol — boshqarish"
+                    val history = kotlinx.coroutines.withContext(Dispatchers.IO) {
+                        SupabaseCloud.loadMessages(this@MainActivity)
+                    }
+                    if (history.isNotEmpty()) {
+                        chatLog.text = history.joinToString("\n\n") { it.first + "\n" + it.second }
+                        historyPrefs.edit().putString("chat", chatLog.text.toString()).apply()
+                    }
+                    dialog.dismiss()
+                }
+            } catch (error: Exception) {
+                Toast.makeText(this@MainActivity, error.localizedMessage ?: "Hisobga ulanishda xatolik", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun showPage(pageId: Int) {
@@ -240,6 +323,7 @@ class MainActivity : Activity() {
         val updated = (if (current.isBlank()) "" else "$current\n\n") + "$sender\n$message"
         chatLog.text = if (updated.length > 12000) updated.takeLast(12000) else updated
         historyPrefs.edit().putString("chat", chatLog.text.toString()).apply()
+        textScope.launch(Dispatchers.IO) { SupabaseCloud.saveMessage(applicationContext, sender, message) }
     }
 
     override fun onDestroy() {
