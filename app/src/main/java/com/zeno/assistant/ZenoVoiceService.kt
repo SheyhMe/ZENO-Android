@@ -179,14 +179,14 @@ class ZenoVoiceService : Service() {
             "open_instagram" to openTool("Instagram"),
             "open_chrome" to openTool("Chrome"),
             "open_camera" to openTool("Camera"),
-            "open_maps" to mapsTool(),
+            "open_maps_search" to mapsTool(),
             "open_app" to genericOpenTool(),
             "go_home" to homeTool(),
             "close_current_app" to homeTool(),
             "exit_app" to homeTool(),
             "open_wifi_settings" to settingsTool(Settings.ACTION_WIFI_SETTINGS),
             "open_bluetooth_settings" to settingsTool(Settings.ACTION_BLUETOOTH_SETTINGS),
-            "search_google" to searchTool(),
+            "search_web" to searchTool(),
             "set_alarm" to alarmTool(),
             "set_timer" to timerTool(),
             "open_dialer" to dialerTool(),
@@ -283,10 +283,12 @@ class ZenoVoiceService : Service() {
 
     private fun searchTool() = object : ClientTool {
         override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
-            val query = (parameters["query"] ?: parameters["search_query"] ?: "").toString().trim()
+            val query = (parameters["query"] ?: "").toString().trim()
             if (query.isBlank()) return ClientToolResult.failure("Qidiruv so'rovi bo'sh")
             val uri = android.net.Uri.parse("https://www.google.com/search?q=" + android.net.Uri.encode(query))
-            startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            val intent = Intent(Intent.ACTION_VIEW, uri).setPackage("com.android.chrome").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            if (packageManager.getLaunchIntentForPackage("com.android.chrome") == null) return ClientToolResult.failure("Chrome o‘rnatilmagan")
+            startActivity(intent)
             return ClientToolResult.success("Google qidiruvi ochildi: " + query)
         }
     }
@@ -295,10 +297,11 @@ class ZenoVoiceService : Service() {
         override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
             val hour = (parameters["hour"]?.toString()?.toIntOrNull() ?: 7).coerceIn(0, 23)
             val minute = (parameters["minute"]?.toString()?.toIntOrNull() ?: 0).coerceIn(0, 59)
+            val label = (parameters["label"] ?: "ZENO").toString()
             val intent = Intent(android.provider.AlarmClock.ACTION_SET_ALARM)
                 .putExtra(android.provider.AlarmClock.EXTRA_HOUR, hour)
                 .putExtra(android.provider.AlarmClock.EXTRA_MINUTES, minute)
-                .putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, "ZENO")
+                .putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, label)
                 .putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, false)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             startActivity(intent)
@@ -308,7 +311,7 @@ class ZenoVoiceService : Service() {
 
     private fun timerTool() = object : ClientTool {
         override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
-            val seconds = (parameters["seconds"]?.toString()?.toIntOrNull() ?: 600).coerceIn(1, 86400)
+            val seconds = (parameters["duration_seconds"]?.toString()?.toIntOrNull() ?: 600).coerceIn(1, 86400)
             val intent = Intent(android.provider.AlarmClock.ACTION_SET_TIMER)
                 .putExtra(android.provider.AlarmClock.EXTRA_LENGTH, seconds)
                 .putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, "ZENO")
@@ -321,7 +324,7 @@ class ZenoVoiceService : Service() {
 
     private fun mapsTool() = object : ClientTool {
         override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
-            val destination = (parameters["destination"] ?: parameters["query"] ?: "").toString().trim()
+            val destination = (parameters["query"] ?: "").toString().trim()
             val uri = if (destination.isBlank()) android.net.Uri.parse("geo:0,0?q=")
                 else android.net.Uri.parse("google.navigation:q=" + android.net.Uri.encode(destination))
             val intent = Intent(Intent.ACTION_VIEW, uri).setPackage("com.google.android.apps.maps")
