@@ -15,6 +15,8 @@ import android.provider.Settings
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import androidx.core.app.NotificationCompat
 import io.elevenlabs.ClientTool
 import io.elevenlabs.ClientToolResult
@@ -32,6 +34,7 @@ class ZenoVoiceService : Service() {
         const val ACTION_START = "com.zeno.assistant.START_VOICE"
         const val ACTION_STOP = "com.zeno.assistant.STOP_VOICE"
         const val ACTION_SEND = "com.zeno.assistant.SEND_MESSAGE"
+        const val ACTION_SPEAK = "com.zeno.assistant.SPEAK_REPLY"
         const val ACTION_STATUS = "com.zeno.assistant.VOICE_STATUS"
         const val ACTION_TRANSCRIPT = "com.zeno.assistant.VOICE_TRANSCRIPT"
         const val ACTION_USER_COMMAND = "com.zeno.assistant.USER_COMMAND"
@@ -48,18 +51,28 @@ class ZenoVoiceService : Service() {
     private var voiceTurnActive = false
     private var hasAgentResponded = false
     private var turnStarting = false
+    private var textToSpeech: TextToSpeech? = null
+    private var ttsReady = false
     private val agentId = "agent_1001m784hww0ftstymy60zkrtx6b"
 
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
+        textToSpeech = TextToSpeech(this) { result ->
+            ttsReady = result == TextToSpeech.SUCCESS
+            if (ttsReady) textToSpeech?.language = Locale("uz", "UZ")
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_STOP -> stopVoice()
             ACTION_SEND -> intent.getStringExtra(EXTRA_TEXT)?.let { session?.sendUserMessage(it) }
-            ACTION_START -> startWakeWordMode()
+            ACTION_SPEAK -> intent.getStringExtra(EXTRA_TEXT)?.let { speakReply(it) }
+            ACTION_START -> {
+                stopping = false
+                startWakeWordMode()
+            }
         }
         return START_NOT_STICKY
     }
@@ -208,19 +221,30 @@ class ZenoVoiceService : Service() {
             override fun onBufferReceived(buffer: ByteArray?) {}
             override fun onEndOfSpeech() {}
             override fun onError(error: Int) {
-                broadcastText("ZENO", "Buyruqni aniqlay olmadim. Qayta urinib ko'ring.")
+                broadcastText("ZENO", "Buyruqni aniqlay olmadim. Qayta ayting.")
                 finishCommandCapture()
+                handler.postDelayed({ captureCommand() }, 900)
             }
             override fun onResults(results: android.os.Bundle?) {
                 val phrase = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
                 if (phrase.isBlank()) {
-                    broadcastText("ZENO", "Buyruq eshitilmadi.")
+                    broadcastText("ZENO", "Buyruq eshitilmadi. Qayta ayting.")
+                    finishCommandCapture()
+                    handler.postDelayed({ captureCommand() }, 700)
                 } else {
-                    broadcastText("Siz", phrase)
-                    // Forward recognized speech to the AI/local command pipeline in MainActivity.
-                    sendBroadcast(Intent(ACTION_USER_COMMAND).setPackage(packageName).putExtra(EXTRA_TEXT, phrase))
+                    val normalized = phrase.lowercase(Locale.ROOT)
+                    if (normalized.contains("zeno to'xta") || normalized.contains("zeno toxta") ||
+                        normalized == "to'xta" || normalized == "toxta" ||
+                        normalized == "suhbatni tugat") {
+                        broadcastText("ZENO", "Suhbat yakunlandi. Yana chaqirishingiz mumkin.")
+                        stopVoice()
+                    } else {
+                        broadcastText("Siz", phrase)
+                        finishCommandCapture()
+                        broadcastStatus("ZENO javob tayyorlayapti...")
+                        sendBroadcast(Intent(ACTION_USER_COMMAND).setPackage(packageName).putExtra(EXTRA_TEXT, phrase))
+                    }
                 }
-                finishCommandCapture()
             }
             override fun onPartialResults(partialResults: android.os.Bundle?) {}
             override fun onEvent(eventType: Int, params: android.os.Bundle?) {}
@@ -244,7 +268,28 @@ class ZenoVoiceService : Service() {
         try { speechRecognizer?.destroy() } catch (_: Exception) {}
         speechRecognizer = null
         turnStarting = false
-        if (!stopping) handler.postDelayed({ startWakeRecognizer() }, 900)
+    }
+
+    private fun speakReply(message: String) {
+        if (stopping) return
+        if (!ttsReady || textToSpeech == null) {
+            broadcastStatus("Javob tayyor. Keyingi buyruqni ayting.")
+            handler.postDelayed({ captureCommand() }, 700)
+            return
+        }
+        broadcastStatus("ZENO gapiryapti...")
+        val utteranceId = "zeno-" + System.currentTimeMillis()
+        textToSpeech?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(id: String?) {}
+            override fun onDone(id: String?) {
+                if (id == utteranceId && !stopping) handler.post { captureCommand() }
+            }
+            @Deprecated("Deprecated in Java")
+            override fun onError(id: String?) {
+                if (id == utteranceId && !stopping) handler.post { captureCommand() }
+            }
+        })
+        textToSpeech?.speak(message, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
     }
 
     private fun finishAssistantTurn() {
@@ -416,6 +461,8 @@ class ZenoVoiceService : Service() {
     private fun stopVoice() {
         stopping = true
         stopWakeRecognizer()
+        try { textToSpeech?.stop(); textToSpeech?.shutdown() } catch (_: Exception) {}
+        textToSpeech = null
         val active = session
         session = null
         scope.launch { active?.endSession() }
