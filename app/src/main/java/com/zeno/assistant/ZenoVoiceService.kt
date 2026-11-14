@@ -422,7 +422,7 @@ class ZenoVoiceService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.zeno_icon_foreground)
+            .setSmallIcon(R.drawable.zeno_notification_icon)
             .setContentTitle("ZENO")
             .setContentText(message)
             .setContentIntent(openIntent)
