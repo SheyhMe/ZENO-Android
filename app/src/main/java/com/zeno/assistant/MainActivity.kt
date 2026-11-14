@@ -338,6 +338,11 @@ class MainActivity : AppCompatActivity() {
         } else {
             "☁  $email"
         }
+        findViewById<TextView>(R.id.statusIndicator).text = if (email.isNullOrBlank()) {
+            if (preferences.getString("language", "uz") == "en") "● LOCAL READY" else "● MAHALLIY TAYYOR"
+        } else {
+            if (preferences.getString("language", "uz") == "en") "● ZENO AI READY" else "● ZENO AI TAYYOR"
+        }
     }
 
     private fun syncCloudSettings() {
