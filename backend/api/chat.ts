@@ -125,7 +125,7 @@ export default async function handler(req: any, res: any) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "openai/gpt-5.4-mini",
+        model: "openai/gpt-6-luna",
         instructions: [
           "You are ZENO, a personal AI assistant.",
           "Understand Uzbek Latin and English. Reply in the same language as the latest user message.",
@@ -163,7 +163,7 @@ export default async function handler(req: any, res: any) {
       });
 
     if (actions.length > 0) {
-      return res.status(200).json({ reply: "", actions, model: "openai/gpt-5.4-mini" });
+      return res.status(200).json({ reply: "", actions, model: "openai/gpt-6-luna" });
     }
 
     const text = typeof result.output_text === "string"
@@ -176,7 +176,7 @@ export default async function handler(req: any, res: any) {
           .trim();
 
     if (!text) return replyError(res, 502, "AI javobi bo'sh qaytdi.");
-    return res.status(200).json({ reply: text, actions: [], model: "openai/gpt-5.4-mini" });
+    return res.status(200).json({ reply: text, actions: [], model: "openai/gpt-6-luna" });
   } catch {
     return replyError(res, 500, "ZENO serverida vaqtinchalik xatolik yuz berdi.");
   }
