@@ -7,6 +7,7 @@ import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.serialization.Serializable
 import java.util.UUID
 
@@ -48,6 +49,7 @@ class ZenoCloudRepository(context: Context) {
         client.auth.awaitInitialization()
         val user = client.auth.currentUserOrNull() ?: error("Kirish yakunlanmadi. Email tasdiqlanganini tekshiring.")
         syncProfile(user.id, user.email)
+        restoreLatestConversation()
         startConversation()
     }
 
@@ -60,6 +62,7 @@ class ZenoCloudRepository(context: Context) {
         client.auth.awaitInitialization()
         val user = client.auth.currentUserOrNull() ?: return false
         syncProfile(user.id, user.email)
+        restoreLatestConversation()
         startConversation()
         return true
     }
@@ -80,6 +83,43 @@ class ZenoCloudRepository(context: Context) {
                 wake_phrase_enabled = wakePhraseEnabled
             )
         )
+    }
+
+    suspend fun loadSettings(): CloudPreferenceSnapshot? {
+        val user = client.auth.currentUserOrNull() ?: return null
+        return client.from("assistant_preferences")
+            .select(columns = Columns.list("user_id, language, theme, voice_enabled, wake_phrase_enabled")) {
+                filter { eq("user_id", user.id) }
+            }
+            .decodeList<PreferenceRow>()
+            .firstOrNull()
+            ?.let {
+                CloudPreferenceSnapshot(it.language, it.theme, it.voice_enabled, it.wake_phrase_enabled)
+            }
+    }
+
+    suspend fun restoreLatestConversation(): List<Pair<String, String>> {
+        val user = client.auth.currentUserOrNull() ?: return emptyList()
+        val latest = client.from("conversations")
+            .select(columns = Columns.list("id, updated_at")) {
+                filter { eq("user_id", user.id) }
+            }
+            .decodeList<ConversationLookupRow>()
+            .maxByOrNull { it.updated_at }
+
+        if (latest == null) {
+            preferences.edit().remove("conversation_id").remove("conversation_owner").apply()
+            return emptyList()
+        }
+
+        preferences.edit().putString("conversation_owner", user.id).putString("conversation_id", latest.id).apply()
+        return client.from("messages")
+            .select(columns = Columns.list("role, content, created_at")) {
+                filter { eq("conversation_id", latest.id) }
+            }
+            .decodeList<StoredMessageRow>()
+            .sortedBy { it.created_at }
+            .map { it.role to it.content }
     }
 
     suspend fun startConversation(): String? {
@@ -145,6 +185,12 @@ class ZenoCloudRepository(context: Context) {
         val user_id: String,
         val title: String
     )
+
+    @Serializable
+    private data class ConversationLookupRow(val id: String, val updated_at: String)
+
+    @Serializable
+    private data class StoredMessageRow(val role: String, val content: String, val created_at: String)
 
     @Serializable
     private data class MessageRow(
