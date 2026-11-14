@@ -83,3 +83,17 @@ The ElevenLabs agent must have matching client-tool definitions (same names and 
 ## Cloud provisioning blocker
 
 The connected Supabase and Vercel accounts currently expose no projects or teams. Do not place provider secrets in the Android app. Before enabling Google/GitHub/Notion OAuth or remote OpenAI orchestration, provision the backend and configure the server-side environment variables listed above.
+
+## Supabase cloud foundation
+
+The provisioned Supabase project is zeno-core in eu-central-1 (Frankfurt). The database migrations are tracked in supabase/migrations/.
+
+Tables:
+- profiles: account display name and language.
+- conversations and messages: user-owned chat history.
+- user_memories: user-owned memory entries.
+- assistant_preferences: language, theme and voice preferences.
+
+Every table has RLS enabled. Policies compare the row owner with auth.uid(). Only the authenticated role receives table privileges; anon has no table access. The Android client uses only the public publishable key. Never add a service-role or secret key to the APK.
+
+Email/password sign-up uses Supabase Auth. Hosted projects require email confirmation by default. The built-in SMTP sender is test-only: it only sends to organization team addresses and is limited to 2 emails per hour. Before inviting other users, configure a custom SMTP provider under Authentication > Emails > SMTP Settings. Keep email confirmation enabled for production.
