@@ -78,6 +78,17 @@ class MainActivity : Activity() {
         }
         chatLog = findViewById(R.id.chatLog)
         messageInput = findViewById(R.id.messageInput)
+        val appSearchInput = findViewById<EditText>(R.id.appSearchInput)
+        appSearchInput.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE) {
+                val query = appSearchInput.text.toString().trim()
+                if (query.isNotBlank()) {
+                    val result = LocalCommandRouter.execute(this, "och " + query)
+                    if (result != null) Toast.makeText(this, result, Toast.LENGTH_SHORT).show()
+                }
+                true
+            } else false
+        }
         val chatScroll = findViewById<ScrollView>(R.id.chatScroll)
         messageInput.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) chatScroll.postDelayed({
