@@ -23,6 +23,7 @@ import io.elevenlabs.ClientToolResult
 import io.elevenlabs.ConversationClient
 import io.elevenlabs.ConversationConfig
 import io.elevenlabs.ConversationSession
+import com.zeno.assistant.core.data.ZenoCloudRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -42,6 +43,7 @@ class ZenoVoiceService : Service() {
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val cloudRepository by lazy { ZenoCloudRepository(applicationContext) }
     private val handler = Handler(Looper.getMainLooper())
     private var session: ConversationSession? = null
     private var speechRecognizer: SpeechRecognizer? = null
@@ -193,7 +195,65 @@ class ZenoVoiceService : Service() {
             "set_alarm" to alarmTool(),
             "set_timer" to timerTool(),
             "search_web" to webSearchTool(),
-            "open_maps_search" to mapsSearchTool()
+            "open_maps_search" to mapsSearchTool(),
+            "get_memories" to object : ClientTool {
+                override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
+                    return try {
+                        cloudRepository.awaitSession()
+                        if (!cloudRepository.isSignedIn()) {
+                            ClientToolResult.failure("Xotiralar uchun avval ZENO Cloud hisobiga kiring.")
+                        } else {
+                            val memories = cloudRepository.loadMemories()
+                            if (memories.isEmpty()) {
+                                ClientToolResult.success("Saqlangan xotiralar topilmadi.")
+                            } else {
+                                ClientToolResult.success(memories.joinToString("\n") {
+                                    "id=${it.id}; category=${it.category}; importance=${it.importance}; content=${it.content}"
+                                })
+                            }
+                        }
+                    } catch (e: Exception) {
+                        ClientToolResult.failure("Xotiralarni o‘qib bo‘lmadi: ${e.localizedMessage ?: "xatolik"}")
+                    }
+                }
+            },
+            "save_memory" to object : ClientTool {
+                override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
+                    val content = parameters["content"]?.toString()?.trim().orEmpty()
+                    if (content.isBlank()) return ClientToolResult.failure("Saqlash uchun xotira matni kerak.")
+                    val category = parameters["category"]?.toString()?.take(80) ?: "general"
+                    val importance = (parameters["importance"] as? Number)?.toInt()
+                        ?: parameters["importance"]?.toString()?.toIntOrNull() ?: 3
+                    return try {
+                        cloudRepository.awaitSession()
+                        if (!cloudRepository.isSignedIn()) {
+                            ClientToolResult.failure("Xotira saqlash uchun ZENO Cloud hisobiga kiring.")
+                        } else {
+                            cloudRepository.addMemory(content, category, importance)
+                            ClientToolResult.success("Xotira ZENO Cloud hisobingizga saqlandi.")
+                        }
+                    } catch (e: Exception) {
+                        ClientToolResult.failure("Xotirani saqlab bo‘lmadi: ${e.localizedMessage ?: "xatolik"}")
+                    }
+                }
+            },
+            "delete_memory" to object : ClientTool {
+                override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
+                    val id = parameters["id"]?.toString()?.trim().orEmpty()
+                    if (id.isBlank()) return ClientToolResult.failure("O‘chirish uchun xotira ID kerak.")
+                    return try {
+                        cloudRepository.awaitSession()
+                        if (!cloudRepository.isSignedIn()) {
+                            ClientToolResult.failure("Xotiralarni boshqarish uchun ZENO Cloud hisobiga kiring.")
+                        } else {
+                            cloudRepository.deleteMemory(id)
+                            ClientToolResult.success("Xotira o‘chirildi.")
+                        }
+                    } catch (e: Exception) {
+                        ClientToolResult.failure("Xotirani o‘chirib bo‘lmadi: ${e.localizedMessage ?: "xatolik"}")
+                    }
+                }
+            }
         )
         val config = ConversationConfig(
             agentId = agentId,
