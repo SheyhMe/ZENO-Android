@@ -347,7 +347,7 @@ class MainActivity : AppCompatActivity() {
         val passwordInput = EditText(this).apply {
             hint = "Parol (kamida 8 belgi)"
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            singleLine = true
+            isSingleLine = true
         }
         val form = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
