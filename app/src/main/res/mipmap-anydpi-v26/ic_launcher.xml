@@ -1,4 +1,5 @@
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@color/zeno_icon_background" />
     <foreground android:drawable="@drawable/zeno_icon_foreground" />
+    <monochrome android:drawable="@drawable/zeno_notification_icon" />
 </adaptive-icon>
