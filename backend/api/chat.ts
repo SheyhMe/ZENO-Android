@@ -3,6 +3,8 @@ type ChatMessage = {
   content: string;
 };
 
+export const config = { maxDuration: 60 };
+
 const MAX_MESSAGES = 20;
 const MAX_MESSAGE_LENGTH = 6000;
 
