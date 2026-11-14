@@ -80,9 +80,9 @@ The ElevenLabs agent must have matching client-tool definitions (same names and 
 - The settings shortcut opens Android's app-permission page.
 - Android 13+ notification permission is requested when voice mode is first enabled.
 
-## Cloud provisioning blocker
+## Remaining backend provisioning
 
-The connected Supabase and Vercel accounts currently expose no projects or teams. Do not place provider secrets in the Android app. Before enabling Google/GitHub/Notion OAuth or remote OpenAI orchestration, provision the backend and configure the server-side environment variables listed above.
+Supabase is provisioned and the Android client now supports email/password accounts, per-user cloud chat writes and preference sync. The production email flow still needs a custom SMTP provider. Vercel hosting, private OpenAI orchestration, server-side ElevenLabs credentials and Google/GitHub/Notion OAuth remain unconfigured. Do not place provider secrets in the Android app. Configure the server-side environment variables listed above before enabling those integrations.
 
 ## Supabase cloud foundation
 
