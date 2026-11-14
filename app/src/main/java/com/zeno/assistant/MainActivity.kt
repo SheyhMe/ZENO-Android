@@ -329,6 +329,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 val config = ConversationConfig(
                     agentId = agentId,
+                    clientTools = AndroidActionTools.create(this@MainActivity),
                     textOnly = true,
                     onConnect = {
                         runOnUiThread { status.text = "ZENO matnli rejimda tayyor" }
