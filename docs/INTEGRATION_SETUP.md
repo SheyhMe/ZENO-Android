@@ -55,3 +55,31 @@ Do not call OAuth or AI integration complete until:
 3. RLS isolation is tested with two separate users.
 4. Side-effect confirmation is tested, including cancellation.
 5. Logs and APK contents are checked for credential leakage.
+
+## Android voice client-tool contract
+
+The Android voice service exposes these client tools to the ElevenLabs conversation session:
+
+| Tool name | Parameters | Behavior |
+| --- | --- | --- |
+| `set_alarm` | `hour` (0–23), optional `minute` (0–59), optional `label` | Opens Android's alarm setup screen; the user confirms the alarm in the clock app |
+| `set_timer` | `duration_seconds` (1–86400), or `minutes` | Opens Android's timer setup screen; the user confirms in the clock app |
+| `search_web` | `query` | Opens a browser search |
+| `open_maps_search` | `query` or `place` | Opens a map search |
+| `open_app` | `app_name` or `name` | Launches an installed app |
+| `open_wifi_settings` | none | Opens Wi-Fi settings |
+| `open_bluetooth_settings` | none | Opens Bluetooth settings |
+
+The ElevenLabs agent must have matching client-tool definitions (same names and parameter schemas) and must be instructed when to call each tool. Adding a tool to the Android client alone does not configure the hosted agent. Alarm and timer actions intentionally open the system confirmation UI rather than silently scheduling.
+
+## Current Android client improvements
+
+- Installed-app search filters launchable apps on-device; selecting a result opens that app.
+- Chat transcript is retained locally between activity restarts (bounded to the latest 6,000 characters).
+- Uzbek/English preference is retained locally. The current language toggle covers core navigation and input labels; full localization of every screen and agent speech remains a follow-up.
+- The settings shortcut opens Android's app-permission page.
+- Android 13+ notification permission is requested when voice mode is first enabled.
+
+## Cloud provisioning blocker
+
+The connected Supabase and Vercel accounts currently expose no projects or teams. Do not place provider secrets in the Android app. Before enabling Google/GitHub/Notion OAuth or remote OpenAI orchestration, provision the backend and configure the server-side environment variables listed above.
