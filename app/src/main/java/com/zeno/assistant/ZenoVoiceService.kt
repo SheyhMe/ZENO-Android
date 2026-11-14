@@ -141,8 +141,8 @@ class ZenoVoiceService : Service() {
                 try {
                     val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "uz-UZ")
-                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "uz-UZ")
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US")
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "en-US")
                         putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                         putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
                     }
@@ -179,6 +179,7 @@ class ZenoVoiceService : Service() {
             "open_instagram" to openTool("Instagram"),
             "open_chrome" to openTool("Chrome"),
             "open_camera" to openTool("Camera"),
+            "open_maps" to mapsTool(),
             "open_maps_search" to mapsTool(),
             "open_app" to genericOpenTool(),
             "go_home" to homeTool(),
