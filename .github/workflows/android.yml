@@ -1,7 +1,7 @@
 name: Build ZENO APK
 on:
   push:
-    branches: [ main, zeno-v2 ]
+    branches: [ main, zeno-v2, zeno-full-upgrade ]
   workflow_dispatch:
 permissions:
   contents: read
