@@ -1,7 +1,8 @@
 package com.zeno.assistant
 
 import android.Manifest
-import android.app.Activity
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -33,7 +34,7 @@ import android.text.Editable
 import android.text.TextWatcher
 import java.util.Locale
 
-class MainActivity : Activity() {
+class MainActivity : AppCompatActivity() {
     private lateinit var status: TextView
     private lateinit var chatLog: TextView
     private lateinit var messageInput: EditText
@@ -67,6 +68,12 @@ class MainActivity : Activity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val savedTheme = getSharedPreferences("zeno_preferences", MODE_PRIVATE).getString("theme_mode", "system")
+        AppCompatDelegate.setDefaultNightMode(when (savedTheme) {
+            "dark" -> AppCompatDelegate.MODE_NIGHT_YES
+            "light" -> AppCompatDelegate.MODE_NIGHT_NO
+            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        })
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         status = findViewById(R.id.statusText)
@@ -99,6 +106,7 @@ class MainActivity : Activity() {
 
         findViewById<Button>(R.id.listenButton).setOnClickListener { toggleBackgroundVoice() }
         findViewById<View>(R.id.gearSettings).setOnClickListener { showPage(R.id.profilePage) }
+        findViewById<Button>(R.id.themeButton).setOnClickListener { cycleTheme() }
         findViewById<Button>(R.id.languageButton).setOnClickListener {
             val next = if (preferences.getString("language", "uz") == "uz") "en" else "uz"
             preferences.edit().putString("language", next).apply()
@@ -252,6 +260,21 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun cycleTheme() {
+        val current = preferences.getString("theme_mode", "system")
+        val next = when (current) {
+            "system" -> "dark"
+            "dark" -> "light"
+            else -> "system"
+        }
+        preferences.edit().putString("theme_mode", next).apply()
+        AppCompatDelegate.setDefaultNightMode(when (next) {
+            "dark" -> AppCompatDelegate.MODE_NIGHT_YES
+            "light" -> AppCompatDelegate.MODE_NIGHT_NO
+            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        })
+    }
+
     private fun applyLanguage() {
         val english = preferences.getString("language", "uz") == "en"
         findViewById<Button>(R.id.navHome).text = if (english) "⌂\nHome" else "⌂\nBosh sahifa"
@@ -264,6 +287,12 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.languageButton).text =
             if (english) "Language: English (tap to use Uzbek)" else "Til: O‘zbekcha (English uchun bosing)"
         findViewById<Button>(R.id.permissionsButton).text = if (english) "App permissions" else "Ilova ruxsatlari"
+        val themeMode = preferences.getString("theme_mode", "system")
+        findViewById<Button>(R.id.themeButton).text = when (themeMode) {
+            "dark" -> if (english) "Theme: Dark (tap to cycle)" else "Mavzu: Tungi (almashtirish)"
+            "light" -> if (english) "Theme: Light (tap to cycle)" else "Mavzu: Kunduzgi (almashtirish)"
+            else -> if (english) "Theme: System (tap to cycle)" else "Mavzu: Avtomatik (almashtirish)"
+        }
         findViewById<TextView>(R.id.statusIndicator).text = if (english) "● LOCAL READY" else "● MAHALLIY TAYYOR"
     }
 
