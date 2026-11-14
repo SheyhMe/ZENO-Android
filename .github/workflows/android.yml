@@ -43,6 +43,30 @@ jobs:
               echo "ZENO crashed during startup"
               exit 1
             fi
+      - name: Verify deployed ZENO backend
+        run: |
+          url="https://zeno-private-backend-git-zeno-full-upgrade-seyhme-5727.vercel.app/api/chat"
+          for attempt in $(seq 1 18); do
+            status=$(curl -sS -o /tmp/zeno-health.json -w "%{http_code}" "$url" || true)
+            if [ "$status" = "200" ] && grep -q '"status":"ok"' /tmp/zeno-health.json; then
+              break
+            fi
+            if [ "$attempt" = "18" ]; then
+              echo "ZENO backend health check failed"
+              cat /tmp/zeno-health.json || true
+              exit 1
+            fi
+            sleep 5
+          done
+          auth_status=$(curl -sS -o /tmp/zeno-auth.json -w "%{http_code}" -X POST "$url" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer invalid-test-token" \
+            --data '{"messages":[{"role":"user","content":"health check"}]}')
+          if [ "$auth_status" != "401" ]; then
+            echo "ZENO backend auth guard returned $auth_status instead of 401"
+            cat /tmp/zeno-auth.json || true
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: ZENO-debug-apk
