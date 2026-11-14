@@ -122,7 +122,11 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.navVoice).setOnClickListener { showPage(R.id.voicePage) }
         findViewById<Button>(R.id.navProfile).setOnClickListener { showPage(R.id.profilePage) }
         val accountButton = findViewById<Button>(R.id.accountButton)
-        accountButton.text = if (SupabaseCloud.isSignedIn(this)) "Hisob faol — boshqarish" else "Kirish / Roʻyxatdan oʻtish"
+        val signedIn = SupabaseCloud.isSignedIn(this)
+        accountButton.text = if (signedIn) "Hisob faol — boshqarish" else "Kirish / Roʻyxatdan oʻtish"
+        if (signedIn) {
+            SupabaseCloud.currentUserId(this)?.let { historyPrefs.edit().putString("cloud_owner_user_id", it).apply() }
+        }
         accountButton.setOnClickListener { showAccountDialog(accountButton) }
 
         val savedHistory = historyPrefs.getString("chat", "").orEmpty()
