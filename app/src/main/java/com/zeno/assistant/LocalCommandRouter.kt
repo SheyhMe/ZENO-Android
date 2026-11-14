@@ -18,12 +18,14 @@ object LocalCommandRouter {
                 normalized.startsWith("internetdan qidir") || normalized.startsWith("google dan qidir") || normalized.startsWith("qidir:") || normalized.startsWith("search:") -> {
                     val query = text.substringAfter(":", text.substringAfter("qidir", "")).trim()
                     if (query.isBlank()) return "Nimani qidiray? Masalan: Internetdan qidir Android dasturlash."
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=" + Uri.encode(query))).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                    "Google qidiruvi ochildi: " + query
+                    if (context.packageManager.getLaunchIntentForPackage("com.android.chrome") == null) return "Google qidiruvi uchun Chrome o‘rnatilmagan."
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=" + Uri.encode(query))).setPackage("com.android.chrome").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    "Google qidiruvi Chrome’da ochildi: " + query
                 }
                 normalized.contains("budilnik") || normalized.contains("alarm") -> {
                     val match = Regex("(\\d{1,2})[:.](\\d{2})").find(normalized)
-                    val hour = match?.groupValues?.get(1)?.toIntOrNull() ?: 7
+                    val hour = match?.groupValues?.get(1)?.toIntOrNull()
+                        ?: Regex("soat\\s*(\\d{1,2})").find(normalized)?.groupValues?.get(1)?.toIntOrNull() ?: 7
                     val minute = match?.groupValues?.get(2)?.toIntOrNull() ?: 0
                     if (hour !in 0..23 || minute !in 0..59) return "Vaqtni 24 soat formatida yozing. Masalan: 07:30."
                     context.startActivity(Intent(AlarmClock.ACTION_SET_ALARM).putExtra(AlarmClock.EXTRA_HOUR, hour).putExtra(AlarmClock.EXTRA_MINUTES, minute).putExtra(AlarmClock.EXTRA_MESSAGE, "ZENO budilnik").putExtra(AlarmClock.EXTRA_SKIP_UI, false).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
