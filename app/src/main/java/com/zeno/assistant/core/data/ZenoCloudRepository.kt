@@ -40,6 +40,13 @@ data class ZenoAiToolResult(val callId: String, val output: String)
 
 data class ZenoAiResponse(val reply: String, val actions: List<ZenoAiAction>)
 
+data class CloudMemory(
+    val id: String,
+    val category: String,
+    val content: String,
+    val importance: Int
+)
+
 class ZenoCloudRepository(context: Context) {
     private val preferences = context.applicationContext.getSharedPreferences("zeno_cloud", Context.MODE_PRIVATE)
 
@@ -163,6 +170,59 @@ class ZenoCloudRepository(context: Context) {
         return id
     }
 
+    suspend fun loadMemories(): List<CloudMemory> {
+        val user = client.auth.currentUserOrNull() ?: return emptyList()
+        return client.from("user_memories")
+            .select(columns = Columns.list("id, category, content, importance")) {
+                filter {
+                    eq("user_id", user.id)
+                    eq("is_active", true)
+                }
+            }
+            .decodeList<MemoryRow>()
+            .sortedByDescending { it.importance }
+            .map { CloudMemory(it.id, it.category, it.content, it.importance) }
+    }
+
+    suspend fun addMemory(content: String, category: String = "general", importance: Int = 3) {
+        val user = client.auth.currentUserOrNull() ?: error("Xotira saqlash uchun ZENO Cloud hisobiga kiring.")
+        val cleanContent = content.trim()
+        require(cleanContent.isNotBlank() && cleanContent.length <= 10000) { "Xotira 1–10000 belgidan iborat bo‘lishi kerak." }
+        client.from("user_memories").insert(
+            MemoryInsertRow(
+                user_id = user.id,
+                category = category.take(80),
+                content = cleanContent,
+                source = "user",
+                importance = importance.coerceIn(1, 5)
+            )
+        )
+    }
+
+    suspend fun updateMemory(id: String, content: String, category: String = "general") {
+        val user = client.auth.currentUserOrNull() ?: error("Xotira tahrirlash uchun ZENO Cloud hisobiga kiring.")
+        val cleanContent = content.trim()
+        require(cleanContent.isNotBlank() && cleanContent.length <= 10000) { "Xotira 1–10000 belgidan iborat bo‘lishi kerak." }
+        client.from("user_memories").update(
+            MemoryUpdateRow(category = category.take(80), content = cleanContent)
+        ) {
+            filter {
+                eq("id", id)
+                eq("user_id", user.id)
+            }
+        }
+    }
+
+    suspend fun deleteMemory(id: String) {
+        val user = client.auth.currentUserOrNull() ?: return
+        client.from("user_memories").delete {
+            filter {
+                eq("id", id)
+                eq("user_id", user.id)
+            }
+        }
+    }
+
     suspend fun sendAiMessage(
         messages: List<Pair<String, String>>,
         previousActions: List<ZenoAiAction> = emptyList(),
@@ -269,6 +329,29 @@ class ZenoCloudRepository(context: Context) {
             ProfileRow(user_id = userId, display_name = email?.substringBefore("@"))
         )
     }
+
+    @Serializable
+    private data class MemoryRow(
+        val id: String,
+        val category: String,
+        val content: String,
+        val importance: Int
+    )
+
+    @Serializable
+    private data class MemoryInsertRow(
+        val user_id: String,
+        val category: String,
+        val content: String,
+        val source: String,
+        val importance: Int
+    )
+
+    @Serializable
+    private data class MemoryUpdateRow(
+        val category: String,
+        val content: String
+    )
 
     @Serializable
     private data class ProfileRow(
