@@ -78,8 +78,23 @@ export default async function handler(req: any, res: any) {
       return replyError(res, 400, "The last message must be a valid user message");
     }
 
-    const toolCalls = Array.isArray(body.toolCalls) ? body.toolCalls.slice(0, 8) : [];
-    const toolResults = Array.isArray(body.toolResults) ? body.toolResults.slice(0, 8) : [];
+    const allowedToolNames = new Set(DEVICE_TOOLS.map((tool) => tool.name));
+    const toolCalls = (Array.isArray(body.toolCalls) ? body.toolCalls : [])
+      .filter((call: any) => allowedToolNames.has(String(call?.name ?? "")))
+      .slice(0, 6)
+      .map((call: any) => ({
+        call_id: String(call.call_id ?? "").slice(0, 128),
+        name: String(call.name ?? ""),
+        arguments: call.arguments && typeof call.arguments === "object" ? call.arguments : {},
+      }));
+    const allowedCallIds = new Set(toolCalls.map((call: any) => call.call_id));
+    const toolResults = (Array.isArray(body.toolResults) ? body.toolResults : [])
+      .filter((result: any) => allowedCallIds.has(String(result?.call_id ?? "")))
+      .slice(0, 6)
+      .map((result: any) => ({
+        call_id: String(result.call_id),
+        output: String(result.output ?? "").slice(0, 2000),
+      }));
     const input = [
       ...messages.map((message) => ({ type: "message", ...message })),
       ...toolCalls.map((call: any) => ({
