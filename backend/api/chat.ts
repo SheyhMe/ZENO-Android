@@ -24,7 +24,7 @@ export default async function handler(req: any, res: any) {
 
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_PUBLISHABLE_KEY;
-  const gatewayToken = process.env.VERCEL_OIDC_TOKEN;
+  const gatewayToken = req.headers["x-vercel-oidc-token"] ?? process.env.VERCEL_OIDC_TOKEN;
   if (!supabaseUrl || !supabaseKey || !gatewayToken) {
     return replyError(res, 503, "ZENO backend is not fully configured");
   }
