@@ -126,6 +126,7 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.navApps).setOnClickListener { showPage(R.id.appsPage) }
         findViewById<Button>(R.id.navVoice).setOnClickListener { showPage(R.id.voicePage) }
         findViewById<Button>(R.id.navProfile).setOnClickListener { showPage(R.id.profilePage) }
+        findViewById<Button>(R.id.accessibilityButton).setOnClickListener { startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
         findViewById<Button>(R.id.cyberButton).setOnClickListener { showPage(R.id.cyberPage) }
         findViewById<Button>(R.id.cyberAskButton).setOnClickListener { fillAndOpenChat("Menga kiberxavfsizlikni noldan o‘rgat. Birinchi darsni boshlaymiz.") }
 
@@ -196,13 +197,7 @@ class MainActivity : Activity() {
             appendChat("ZENO", localReply)
             return
         }
-        val cyberReply = CyberSecurityKnowledge.answer(message)
-        if (cyberReply != null) {
-            appendChat("ZENO • Kiberxavfsizlik", cyberReply)
-            return
-        }
-        // Text chat always uses its own session; wake-word listening must not swallow typed messages.
-        sendTextMessage(message)
+        appendChat("ZENO", "Buyruqni tushunmadim. Masalan: “Telegramni och”, “orqaga”, “pastga aylantir”, “Wi-Fi sozlamalarini och”.")
     }
 
     private fun createTextClientTools(): Map<String, ClientTool> {
