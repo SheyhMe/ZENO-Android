@@ -193,8 +193,13 @@ class MainActivity : Activity() {
             return
         }
         val intent = Intent(this, ZenoVoiceService::class.java).setAction(ZenoVoiceService.ACTION_START)
-        if (Build.VERSION.SDK_INT >= 26) startForegroundService(intent) else startService(intent)
-        status.text = "“Hey ZENO” faollashtirilmoqda..."
+        try {
+            if (Build.VERSION.SDK_INT >= 26) startForegroundService(intent) else startService(intent)
+            status.text = "“Hey ZENO” faollashtirilmoqda..."
+        } catch (e: Exception) {
+            status.text = "Ovozli boshqaruvni yoqib bo‘lmadi: " + (e.message ?: e.javaClass.simpleName)
+            Toast.makeText(this, status.text, Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun sendMessage() {
