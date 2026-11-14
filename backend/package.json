@@ -1,5 +1,9 @@
 {
   "name": "zeno-private-backend",
   "private": true,
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "typescript": "^5.9.3"
+  }
 }
