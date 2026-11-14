@@ -151,17 +151,17 @@
             android:layout_height="match_parent" android:visibility="gone"
             android:gravity="center" android:orientation="vertical">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="VOICE ASSISTANT" android:textColor="@color/zeno_accent"
+                android:text="ZENO VOICE" android:textColor="@color/zeno_accent"
                 android:textSize="11sp" android:letterSpacing="0.22"/>
             <FrameLayout android:layout_width="230dp" android:layout_height="230dp"
                 android:layout_marginTop="24dp" android:background="@drawable/zeno_orb">
                 <TextView android:layout_width="match_parent" android:layout_height="match_parent"
-                    android:gravity="center" android:text="🎙" android:textSize="62sp"
-                    android:textColor="@color/zeno_text"/>
+                    android:gravity="center" android:text="Z" android:textSize="76sp"
+                    android:fontFamily="sans-serif-light" android:textColor="@color/zeno_text"/>
             </FrameLayout>
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:layout_marginTop="25dp" android:text="Hey ZENO"
-                android:textColor="#F5F0FF" android:textSize="25sp" android:fontFamily="sans-serif-medium"/>
+                android:textColor="@color/zeno_text" android:textSize="25sp" android:fontFamily="sans-serif-medium"/>
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:layout_marginTop="7dp" android:text="Ovozli boshqaruvni yoqing yoki o‘chiring"
                 android:textColor="@color/zeno_muted" android:textSize="12sp"/>
