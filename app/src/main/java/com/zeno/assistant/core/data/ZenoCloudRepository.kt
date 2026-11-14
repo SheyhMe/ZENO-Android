@@ -11,6 +11,12 @@ import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.serialization.Serializable
 import java.util.UUID
 import java.time.Instant
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 
 /**
  * Supabase-backed identity, preferences and chat persistence.
@@ -145,6 +151,46 @@ class ZenoCloudRepository(context: Context) {
             .putString("conversation_id", id)
             .apply()
         return id
+    }
+
+    suspend fun sendAiMessage(messages: List<Pair<String, String>>): String {
+        awaitSession()
+        val accessToken = client.auth.currentAccessTokenOrNull()
+            ?: error("ZENO AI uchun avval ZENO Cloud hisobiga kiring.")
+
+        return withContext(Dispatchers.IO) {
+            val connection = (URL("https://zeno-private-backend.vercel.app/api/chat").openConnection() as HttpURLConnection)
+            try {
+                connection.requestMethod = "POST"
+                connection.connectTimeout = 15000
+                connection.readTimeout = 45000
+                connection.doOutput = true
+                connection.setRequestProperty("Authorization", "Bearer $accessToken")
+                connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                connection.setRequestProperty("Accept", "application/json")
+
+                val payload = JSONObject().put("messages", JSONArray().apply {
+                    messages.takeLast(20).forEach { (role, content) ->
+                        if (content.isNotBlank() && (role == "user" || role == "assistant")) {
+                            put(JSONObject().put("role", role).put("content", content.take(6000)))
+                        }
+                    }
+                })
+                connection.outputStream.use { it.write(payload.toString().toByteArray(Charsets.UTF_8)) }
+
+                val status = connection.responseCode
+                val stream = if (status in 200..299) connection.inputStream else connection.errorStream
+                val response = stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+                val json = if (response.isBlank()) JSONObject() else JSONObject(response)
+                if (status !in 200..299) {
+                    error(json.optString("error").ifBlank { "ZENO AI serverida xatolik ($status)." })
+                }
+                json.optString("reply").takeIf { it.isNotBlank() }
+                    ?: error("ZENO AI bo‘sh javob qaytardi.")
+            } finally {
+                connection.disconnect()
+            }
+        }
     }
 
     suspend fun saveMessage(role: String, content: String) {
