@@ -44,6 +44,9 @@ class MainActivity : AppCompatActivity() {
     private var textSession: ConversationSession? = null
     private var textConnecting = false
     private val pendingTextMessages = ArrayDeque<String>()
+    private val chatContext = mutableListOf<Pair<String, String>>()
+    private val pendingCloudContexts = ArrayDeque<List<Pair<String, String>>>()
+    private var cloudAiBusy = false
     private val textScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val agentId = "agent_1001m784hww0ftstymy60zkrtx6b"
     private var orbPulse: ObjectAnimator? = null
@@ -309,6 +312,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         val messages = cloudRepository.restoreLatestConversation()
+        chatContext.clear()
+        chatContext.addAll(messages.filter { it.first == "user" || it.first == "assistant" })
         val restored = messages.joinToString("\n\n") { (role, content) ->
             val sender = if (role == "user") {
                 if (preferences.getString("language", "uz") == "en") "You" else "Siz"
@@ -356,6 +361,8 @@ class MainActivity : AppCompatActivity() {
                         try {
                             cloudRepository.signOut()
                             chatLog.text = ""
+                            chatContext.clear()
+                            pendingCloudContexts.clear()
                             preferences.edit().remove("chat_history").apply()
                             refreshAccountButton()
                             Toast.makeText(this@MainActivity, "Hisobdan chiqildi", Toast.LENGTH_SHORT).show()
@@ -487,6 +494,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun sendTextMessage(message: String) {
+        if (cloudRepository.isSignedIn()) {
+            pendingCloudContexts.addLast(chatContext.toList())
+            processNextCloudMessage()
+            return
+        }
         val active = textSession
         if (active != null) {
             active.sendUserMessage(message)
@@ -530,6 +542,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun processNextCloudMessage() {
+        if (cloudAiBusy || pendingCloudContexts.isEmpty()) return
+        val context = pendingCloudContexts.removeFirst()
+        cloudAiBusy = true
+        status.text = "ZENO javob tayyorlamoqda..."
+        textScope.launch {
+            try {
+                val reply = cloudRepository.sendAiMessage(context)
+                appendChat("ZENO", reply)
+                status.text = "ZENO AI tayyor"
+            } catch (e: Exception) {
+                appendChat("ZENO", e.localizedMessage ?: "AI bilan bog‘lanib bo‘lmadi.")
+                status.text = "ZENO AI ulanish xatosi"
+            } finally {
+                cloudAiBusy = false
+                processNextCloudMessage()
+            }
+        }
+    }
+
     private fun fill(value: String) {
         messageInput.setText(value)
         messageInput.setSelection(messageInput.text.length)
@@ -542,6 +574,10 @@ class MainActivity : AppCompatActivity() {
         chatLog.text = if (updated.length > 6000) updated.takeLast(6000) else updated
         preferences.edit().putString("chat_history", chatLog.text.toString()).apply()
         val role = if (sender == "Siz" || sender == "You") "user" else "assistant"
+        if (role == "user" || role == "assistant") {
+            chatContext.add(role to message)
+            while (chatContext.size > 20) chatContext.removeAt(0)
+        }
         textScope.launch {
             try {
                 cloudRepository.saveMessage(role, message)
