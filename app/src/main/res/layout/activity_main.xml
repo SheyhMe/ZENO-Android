@@ -32,29 +32,26 @@
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="vertical" android:gravity="center_horizontal" android:paddingBottom="18dp">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:layout_marginTop="18dp" android:text="Hello, Albek janoblari."
-                    android:textColor="@color/zeno_text" android:textSize="21sp" android:fontFamily="sans-serif-medium"/>
+                    android:layout_marginTop="24dp" android:text="Xush kelibsiz"
+                    android:textColor="@color/zeno_text" android:textSize="24sp" android:fontFamily="sans-serif-medium"/>
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:layout_marginTop="5dp" android:text="Bugun sizga qanday yordam beray?"
-                    android:textColor="@color/zeno_muted" android:textSize="13sp"/>
-                <FrameLayout android:id="@+id/orbContainer" android:layout_width="match_parent"
-                    android:layout_height="300dp" android:layout_marginTop="12dp"
-                    android:background="@drawable/zeno_orb">
+                    android:layout_marginTop="5dp" android:text="Bugun nimada yordam beray?"
+                    android:textColor="@color/zeno_muted" android:textSize="14sp"/>
+                <FrameLayout android:id="@+id/orbContainer" android:layout_width="220dp"
+                    android:layout_height="220dp" android:layout_gravity="center"
+                    android:layout_marginTop="28dp" android:background="@drawable/zeno_orb">
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                         android:layout_gravity="center" android:text="Z" android:textColor="@color/zeno_text"
-                        android:textSize="92sp" android:fontFamily="sans-serif-black"
-                        android:shadowColor="#9B63FF" android:shadowRadius="28"/>
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:layout_gravity="bottom|center_horizontal" android:layout_marginBottom="25dp"
-                        android:text="✦  ─  ▏▎▍▆█▆▍▎▏  ─  ✦" android:textColor="#A78BFA" android:textSize="17sp"/>
+                        android:textSize="76sp" android:fontFamily="sans-serif-black"
+                        android:letterSpacing="0.04"/>
                 </FrameLayout>
                 <TextView android:id="@+id/statusText" android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:gravity="center"
                     android:layout_marginTop="2dp" android:padding="8dp"
-                    android:text="ZENO tayyor" android:textColor="@color/zeno_accent" android:textSize="12sp"/>
+                    android:text="Shaxsiy yordamchingiz tayyor" android:textColor="@color/zeno_accent" android:textSize="12sp"/>
                 <Button android:id="@+id/homeVoiceButton" android:layout_width="match_parent"
                     android:layout_height="52dp" android:layout_marginTop="8dp"
-                    android:background="@drawable/zeno_primary_button" android:text="◉   Ovozli yordamchi"
+                    android:background="@drawable/zeno_primary_button" android:text="Mikrofon orqali gaplashish"
                     android:textAllCaps="false" android:textColor="@color/zeno_text" android:textSize="14sp"/>
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:orientation="horizontal" android:layout_marginTop="18dp">
@@ -64,7 +61,7 @@
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                             android:text="✧" android:textColor="@color/zeno_accent_soft" android:textSize="24sp"/>
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="AI Chat" android:textColor="@color/zeno_text" android:textSize="12sp"/>
+                            android:text="Matnli suhbat" android:textColor="@color/zeno_text" android:textSize="12sp"/>
                     </LinearLayout>
                     <LinearLayout android:id="@+id/homeAppsTile" android:clickable="true" android:focusable="true" android:layout_width="0dp" android:layout_height="88dp"
                         android:layout_weight="1" android:layout_marginStart="6dp"
@@ -72,7 +69,7 @@
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                             android:text="▦" android:textColor="@color/zeno_accent_soft" android:textSize="24sp"/>
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="Quick Actions" android:textColor="@color/zeno_text" android:textSize="12sp"/>
+                            android:text="Tezkor buyruqlar" android:textColor="@color/zeno_text" android:textSize="12sp"/>
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>
@@ -220,10 +217,10 @@
     <LinearLayout android:layout_width="match_parent" android:layout_height="62dp"
         android:layout_marginTop="8dp" android:orientation="horizontal"
         android:gravity="center" android:background="@drawable/zeno_nav">
-        <Button android:id="@+id/navHome" style="@style/BottomNav" android:text="⌂&#10;Home"/>
-        <Button android:id="@+id/navChat" style="@style/BottomNav" android:text="▢&#10;Chat"/>
-        <Button android:id="@+id/navApps" style="@style/BottomNav" android:text="▦&#10;Apps"/>
-        <Button android:id="@+id/navVoice" style="@style/BottomNav" android:text="🎙&#10;Voice"/>
-        <Button android:id="@+id/navProfile" style="@style/BottomNav" android:text="⚙&#10;Settings"/>
+        <Button android:id="@+id/navHome" style="@style/BottomNav" android:text="⌂&#10;Bosh sahifa"/>
+        <Button android:id="@+id/navChat" style="@style/BottomNav" android:text="▢&#10;Suhbat"/>
+        <Button android:id="@+id/navApps" style="@style/BottomNav" android:text="▦&#10;Ilovalar"/>
+        <Button android:id="@+id/navVoice" style="@style/BottomNav" android:text="🎙&#10;Ovoz"/>
+        <Button android:id="@+id/navProfile" style="@style/BottomNav" android:text="⚙&#10;Sozlamalar"/>
     </LinearLayout>
 </LinearLayout>
