@@ -9,20 +9,20 @@ const MAX_MESSAGES = 20;
 const MAX_MESSAGE_LENGTH = 6000;
 
 const DEVICE_TOOLS = [
-  { type: "function", name: "open_youtube", description: "Open YouTube on the user's Android phone.", parameters: { type: "object", properties: {}, required: [] } },
-  { type: "function", name: "open_telegram", description: "Open Telegram on the user's Android phone.", parameters: { type: "object", properties: {}, required: [] } },
-  { type: "function", name: "open_instagram", description: "Open Instagram on the user's Android phone.", parameters: { type: "object", properties: {}, required: [] } },
-  { type: "function", name: "open_chrome", description: "Open Google Chrome on the user's Android phone.", parameters: { type: "object", properties: {}, required: [] } },
-  { type: "function", name: "open_camera", description: "Open the camera app on the user's Android phone.", parameters: { type: "object", properties: {}, required: [] } },
-  { type: "function", name: "open_maps", description: "Open Google Maps on the user's Android phone.", parameters: { type: "object", properties: {}, required: [] } },
-  { type: "function", name: "open_app", description: "Open an installed Android app by its visible name.", parameters: { type: "object", properties: { app_name: { type: "string", description: "Visible app name" } }, required: ["app_name"] } },
-  { type: "function", name: "go_home", description: "Return to the Android home screen.", parameters: { type: "object", properties: {}, required: [] } },
-  { type: "function", name: "open_wifi_settings", description: "Open Android Wi-Fi settings.", parameters: { type: "object", properties: {}, required: [] } },
-  { type: "function", name: "open_bluetooth_settings", description: "Open Android Bluetooth settings.", parameters: { type: "object", properties: {}, required: [] } },
-  { type: "function", name: "set_alarm", description: "Open Android alarm setup with the requested time. The user confirms the alarm in Android UI.", parameters: { type: "object", properties: { hour: { type: "integer", minimum: 0, maximum: 23 }, minute: { type: "integer", minimum: 0, maximum: 59 }, label: { type: "string" } }, required: ["hour"] } },
-  { type: "function", name: "set_timer", description: "Open Android timer setup for the requested duration in seconds.", parameters: { type: "object", properties: { duration_seconds: { type: "integer", minimum: 1, maximum: 86400 } }, required: ["duration_seconds"] } },
-  { type: "function", name: "search_web", description: "Open Google search results for a query in Chrome. Do not open result websites automatically.", parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } },
-  { type: "function", name: "open_maps_search", description: "Open a Google Maps search for a place or address.", parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } }
+  { type: "function", strict: false, name: "open_youtube", description: "Open YouTube on the user's Android phone.", parameters: { type: "object", properties: {}, required: [] } },
+  { type: "function", strict: false, name: "open_telegram", description: "Open Telegram on the user's Android phone.", parameters: { type: "object", properties: {}, required: [] } },
+  { type: "function", strict: false, name: "open_instagram", description: "Open Instagram on the user's Android phone.", parameters: { type: "object", properties: {}, required: [] } },
+  { type: "function", strict: false, name: "open_chrome", description: "Open Google Chrome on the user's Android phone.", parameters: { type: "object", properties: {}, required: [] } },
+  { type: "function", strict: false, name: "open_camera", description: "Open the camera app on the user's Android phone.", parameters: { type: "object", properties: {}, required: [] } },
+  { type: "function", strict: false, name: "open_maps", description: "Open Google Maps on the user's Android phone.", parameters: { type: "object", properties: {}, required: [] } },
+  { type: "function", strict: false, name: "open_app", description: "Open an installed Android app by its visible name.", parameters: { type: "object", properties: { app_name: { type: "string", description: "Visible app name" } }, required: ["app_name"] } },
+  { type: "function", strict: false, name: "go_home", description: "Return to the Android home screen.", parameters: { type: "object", properties: {}, required: [] } },
+  { type: "function", strict: false, name: "open_wifi_settings", description: "Open Android Wi-Fi settings.", parameters: { type: "object", properties: {}, required: [] } },
+  { type: "function", strict: false, name: "open_bluetooth_settings", description: "Open Android Bluetooth settings.", parameters: { type: "object", properties: {}, required: [] } },
+  { type: "function", strict: false, name: "set_alarm", description: "Open Android alarm setup with the requested time. The user confirms the alarm in Android UI.", parameters: { type: "object", properties: { hour: { type: "integer", minimum: 0, maximum: 23 }, minute: { type: "integer", minimum: 0, maximum: 59 }, label: { type: "string" } }, required: ["hour"] } },
+  { type: "function", strict: false, name: "set_timer", description: "Open Android timer setup for the requested duration in seconds.", parameters: { type: "object", properties: { duration_seconds: { type: "integer", minimum: 1, maximum: 86400 } }, required: ["duration_seconds"] } },
+  { type: "function", strict: false, name: "search_web", description: "Open Google search results for a query in Chrome. Do not open result websites automatically.", parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } },
+  { type: "function", strict: false, name: "open_maps_search", description: "Open a Google Maps search for a place or address.", parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } }
 ];
 
 function replyError(res: any, status: number, error: string) {
