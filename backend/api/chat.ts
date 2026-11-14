@@ -98,7 +98,7 @@ export default async function handler(req: any, res: any) {
     let memoryContext = "";
     try {
       const memoriesResponse = await fetch(
-        `${supabaseUrl.replace(/\\/+$/, "")}/rest/v1/user_memories?select=category,content,importance&is_active=eq.true&order=importance.desc,updated_at.desc&limit=15`,
+        `${supabaseUrl}/rest/v1/user_memories?select=category,content,importance&is_active=eq.true&order=importance.desc,updated_at.desc&limit=15`,
         {
           headers: {
             apikey: supabaseKey,
