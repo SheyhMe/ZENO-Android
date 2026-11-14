@@ -342,7 +342,7 @@ class MainActivity : AppCompatActivity() {
         val emailInput = EditText(this).apply {
             hint = "Email"
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
-            singleLine = true
+            isSingleLine = true
         }
         val passwordInput = EditText(this).apply {
             hint = "Parol (kamida 8 belgi)"
@@ -517,6 +517,7 @@ class MainActivity : AppCompatActivity() {
                 // Keep local chat responsive if the cloud is offline.
             }
         }
+    }
 
     override fun onDestroy() {
         orbPulse?.cancel()
