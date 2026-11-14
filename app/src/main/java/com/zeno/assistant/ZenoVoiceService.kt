@@ -143,8 +143,11 @@ class ZenoVoiceService : Service() {
                 try {
                     val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "uz-UZ")
-                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "uz-UZ")
+                        val selectedLanguage = getSharedPreferences("zeno_preferences", MODE_PRIVATE)
+                            .getString("language", "uz")
+                        val speechLocale = if (selectedLanguage == "en") "en-US" else "uz-UZ"
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, speechLocale)
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, speechLocale)
                         putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                         putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
                     }
