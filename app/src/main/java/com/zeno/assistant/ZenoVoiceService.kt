@@ -179,7 +179,7 @@ class ZenoVoiceService : Service() {
             "open_instagram" to openTool("Instagram"),
             "open_chrome" to openTool("Chrome"),
             "open_camera" to openTool("Camera"),
-            "open_maps" to openTool("Maps"),
+            "open_maps" to mapsTool(),
             "open_app" to genericOpenTool(),
             "go_home" to homeTool(),
             "close_current_app" to homeTool(),
@@ -189,7 +189,6 @@ class ZenoVoiceService : Service() {
             "search_google" to searchTool(),
             "set_alarm" to alarmTool(),
             "set_timer" to timerTool(),
-            "open_maps" to mapsTool(),
             "open_dialer" to dialerTool(),
             "compose_sms" to smsTool(),
             "open_calendar" to calendarTool()
