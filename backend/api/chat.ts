@@ -160,11 +160,17 @@ export default async function handler(req: any, res: any) {
     });
 
     if (!aiResponse.ok) {
-      const providerError = await aiResponse.json().catch(() => ({}));
-      const status = aiResponse.status === 429 ? 429 : 502;
-      return replyError(res, status, status === 429
-        ? "AI so'rovlari vaqtincha cheklangan. Birozdan keyin urinib ko'ring."
-        : "AI xizmati hozir javob bermayapti.");
+      await aiResponse.json().catch(() => ({}));
+      if (aiResponse.status === 429) {
+        return replyError(res, 429, "AI so'rovlari vaqtincha cheklangan. Birozdan keyin urinib ko'ring.");
+      }
+      if (aiResponse.status === 402) {
+        return replyError(res, 402, "Vercel AI Gateway hisobida kredit yoki budjet yetarli emas.");
+      }
+      if (aiResponse.status === 401 || aiResponse.status === 403) {
+        return replyError(res, 502, "AI Gateway autentifikatsiyasi sozlanmagan.");
+      }
+      return replyError(res, 502, "AI xizmati hozir javob bermayapti.");
     }
 
     const result = await aiResponse.json();
