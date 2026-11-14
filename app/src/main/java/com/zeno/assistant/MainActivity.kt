@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -19,6 +20,7 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import android.widget.ScrollView
+import android.widget.LinearLayout
 import android.view.inputmethod.EditorInfo
 import io.elevenlabs.ConversationClient
 import io.elevenlabs.ConversationConfig
@@ -27,6 +29,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import android.text.Editable
+import android.text.TextWatcher
+import java.util.Locale
 
 class MainActivity : Activity() {
     private lateinit var status: TextView
@@ -40,6 +45,8 @@ class MainActivity : Activity() {
     private val agentId = "agent_1001m784hww0ftstymy60zkrtx6b"
     private var orbPulse: ObjectAnimator? = null
     private val permissionRequest = 102
+    private val notificationPermissionRequest = 103
+    private val preferences by lazy { getSharedPreferences("zeno_preferences", MODE_PRIVATE) }
 
     private val voiceReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -91,6 +98,27 @@ class MainActivity : Activity() {
         }
 
         findViewById<Button>(R.id.listenButton).setOnClickListener { toggleBackgroundVoice() }
+        findViewById<View>(R.id.gearSettings).setOnClickListener { showPage(R.id.profilePage) }
+        findViewById<Button>(R.id.languageButton).setOnClickListener {
+            val next = if (preferences.getString("language", "uz") == "uz") "en" else "uz"
+            preferences.edit().putString("language", next).apply()
+            applyLanguage()
+        }
+        findViewById<Button>(R.id.permissionsButton).setOnClickListener {
+            startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.parse("package:$packageName")))
+        }
+        val appsSearch = findViewById<EditText>(R.id.appsSearchInput)
+        appsSearch.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                renderInstalledApps(s?.toString().orEmpty())
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+        renderInstalledApps("")
+        applyLanguage()
+        findViewById<TextView>(R.id.statusIndicator).text = "● LOCAL READY"
         findViewById<Button>(R.id.homeVoiceButton).setOnClickListener { showPage(R.id.voicePage) }
         findViewById<View>(R.id.homeChatTile).setOnClickListener { showPage(R.id.chatPage); messageInput.requestFocus() }
         findViewById<View>(R.id.homeAppsTile).setOnClickListener { showPage(R.id.appsPage) }
@@ -110,7 +138,9 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.navVoice).setOnClickListener { showPage(R.id.voicePage) }
         findViewById<Button>(R.id.navProfile).setOnClickListener { showPage(R.id.profilePage) }
 
-        appendChat("ZENO", "Assalomu alaykum. Men ZENOman. Avval yozishib tanishamiz — xohlasangiz keyin ovozli suhbatni yoqishingiz mumkin.")
+        val savedChat = preferences.getString("chat_history", "").orEmpty()
+        if (savedChat.isNotBlank()) chatLog.text = savedChat
+        else appendChat("ZENO", "Assalomu alaykum. Men ZENOman. Avval yozishib tanishamiz — xohlasangiz keyin ovozli suhbatni yoqishingiz mumkin.")
     }
 
     private fun showPage(pageId: Int) {
@@ -149,9 +179,91 @@ class MainActivity : Activity() {
             requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), permissionRequest)
             return
         }
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED &&
+            !preferences.getBoolean("notification_prompted", false)) {
+            preferences.edit().putBoolean("notification_prompted", true).apply()
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), notificationPermissionRequest)
+            return
+        }
+        startVoiceService()
+    }
+
+    private fun startVoiceService() {
         val intent = Intent(this, ZenoVoiceService::class.java).setAction(ZenoVoiceService.ACTION_START)
         if (Build.VERSION.SDK_INT >= 26) startForegroundService(intent) else startService(intent)
         status.text = "“Hey ZENO” faollashtirilmoqda..."
+    }
+
+    private fun renderInstalledApps(query: String) {
+        val container = findViewById<LinearLayout>(R.id.installedAppsContainer)
+        container.removeAllViews()
+        val normalized = query.trim().lowercase(Locale.ROOT)
+        if (normalized.isEmpty()) {
+            val hint = TextView(this).apply {
+                text = "Ilovalarni nomi bo‘yicha qidiring"
+                setTextColor(getColor(R.color.zeno_muted))
+                textSize = 12f
+                setPadding(4, 8, 4, 8)
+            }
+            container.addView(hint)
+            return
+        }
+        val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val matches = if (Build.VERSION.SDK_INT >= 33) {
+            packageManager.queryIntentActivities(launcher, PackageManager.ResolveInfoFlags.of(0))
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.queryIntentActivities(launcher, 0)
+        }
+        val results = matches.mapNotNull { info ->
+            val label = info.loadLabel(packageManager).toString()
+            if (label.lowercase(Locale.ROOT).contains(normalized)) {
+                label to info.activityInfo.packageName
+            } else null
+        }.distinctBy { it.second }.sortedBy { it.first.lowercase(Locale.ROOT) }.take(30)
+        if (results.isEmpty()) {
+            val empty = TextView(this).apply {
+                text = if (preferences.getString("language", "uz") == "uz") "Ilova topilmadi" else "No apps found"
+                setTextColor(getColor(R.color.zeno_muted))
+                textSize = 13f
+                setPadding(4, 12, 4, 12)
+            }
+            container.addView(empty)
+            return
+        }
+        results.forEach { (label, packageName) ->
+            val item = Button(this).apply {
+                text = "▣   $label"
+                isAllCaps = false
+                textSize = 13f
+                setTextColor(getColor(R.color.zeno_text))
+                setBackgroundResource(R.drawable.zeno_surface)
+                setOnClickListener {
+                    val launch = packageManager.getLaunchIntentForPackage(packageName)
+                    if (launch != null) startActivity(launch)
+                    else Toast.makeText(this@MainActivity, "Ilovani ochib bo‘lmadi", Toast.LENGTH_SHORT).show()
+                }
+            }
+            container.addView(item, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = 6 })
+        }
+    }
+
+    private fun applyLanguage() {
+        val english = preferences.getString("language", "uz") == "en"
+        findViewById<Button>(R.id.navHome).text = if (english) "⌂\nHome" else "⌂\nBosh sahifa"
+        findViewById<Button>(R.id.navChat).text = if (english) "▢\nChat" else "▢\nChat"
+        findViewById<Button>(R.id.navApps).text = if (english) "▦\nApps" else "▦\nIlovalar"
+        findViewById<Button>(R.id.navVoice).text = if (english) "🎙\nVoice" else "🎙\nOvoz"
+        findViewById<Button>(R.id.navProfile).text = if (english) "⚙\nSettings" else "⚙\nSozlamalar"
+        findViewById<EditText>(R.id.messageInput).hint = if (english) "Write a message..." else "Xabar yozing..."
+        findViewById<EditText>(R.id.appsSearchInput).hint = if (english) "⌕   Search apps..." else "⌕   Ilova qidirish..."
+        findViewById<Button>(R.id.languageButton).text =
+            if (english) "Language: English (tap to use Uzbek)" else "Til: O‘zbekcha (English uchun bosing)"
+        findViewById<Button>(R.id.permissionsButton).text = if (english) "App permissions" else "Ilova ruxsatlari"
+        findViewById<TextView>(R.id.statusIndicator).text = if (english) "● LOCAL READY" else "● MAHALLIY TAYYOR"
     }
 
     private fun sendMessage() {
@@ -221,6 +333,7 @@ class MainActivity : Activity() {
         val current = chatLog.text.toString()
         val updated = (if (current.isBlank()) "" else "$current\n\n") + "$sender\n$message"
         chatLog.text = if (updated.length > 6000) updated.takeLast(6000) else updated
+        preferences.edit().putString("chat_history", chatLog.text.toString()).apply()
     }
 
     override fun onDestroy() {
@@ -232,7 +345,9 @@ class MainActivity : Activity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == permissionRequest && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
+        if (requestCode == notificationPermissionRequest) {
+            startVoiceService()
+        } else if (requestCode == permissionRequest && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
             toggleBackgroundVoice()
         } else if (requestCode == permissionRequest) {
             status.text = "Mikrofon ruxsati kerak"
