@@ -62,6 +62,13 @@ class MainActivity : Activity() {
                 ZenoVoiceService.ACTION_TRANSCRIPT -> {
                     appendChat(intent.getStringExtra("sender") ?: "ZENO", intent.getStringExtra(ZenoVoiceService.EXTRA_TEXT) ?: "")
                 }
+                ZenoVoiceService.ACTION_USER_COMMAND -> {
+                    val spoken = intent.getStringExtra(ZenoVoiceService.EXTRA_TEXT).orEmpty().trim()
+                    if (spoken.isNotBlank()) {
+                        messageInput.setText(spoken)
+                        sendMessage()
+                    }
+                }
             }
         }
     }
@@ -171,6 +178,7 @@ class MainActivity : Activity() {
         val filter = IntentFilter().apply {
             addAction(ZenoVoiceService.ACTION_STATUS)
             addAction(ZenoVoiceService.ACTION_TRANSCRIPT)
+            addAction(ZenoVoiceService.ACTION_USER_COMMAND)
         }
         if (Build.VERSION.SDK_INT >= 33) registerReceiver(voiceReceiver, filter, RECEIVER_NOT_EXPORTED)
         else registerReceiver(voiceReceiver, filter)
