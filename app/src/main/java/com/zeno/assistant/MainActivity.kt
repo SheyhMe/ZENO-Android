@@ -294,6 +294,11 @@ class MainActivity : AppCompatActivity() {
             else -> if (english) "Theme: System (tap to cycle)" else "Mavzu: Avtomatik (almashtirish)"
         }
         findViewById<TextView>(R.id.statusIndicator).text = if (english) "● LOCAL READY" else "● MAHALLIY TAYYOR"
+        findViewById<TextView>(R.id.settingsInfo).text = if (english) {
+            "ZENO — your personal AI assistant\\n\\nLanguage: Uzbek / English\\nTheme: System / Light / Dark\\nMicrophone: used only after you enable voice mode\\nVoice processing: audio is sent to the configured voice service while a voice session is active\\nApp search: processed locally on this device\\nNo SMS, contacts, call-log or accessibility permissions"
+        } else {
+            "ZENO — shaxsiy AI yordamchingiz\\n\\nTil: O‘zbek / English\\nMavzu: Avtomatik / Kunduzgi / Tungi\\nMikrofon: faqat ovozli rejimni yoqqaningizda ishlaydi\\nOvoz qayta ishlash: faol ovozli suhbat paytida audio sozlangan ovoz xizmatiga yuboriladi\\nIlova qidiruvi: telefonda mahalliy bajariladi\\nSMS, kontaktlar, qo‘ng‘iroqlar tarixi va Accessibility ruxsati so‘ralmaydi"
+        }
     }
 
     private fun sendMessage() {
