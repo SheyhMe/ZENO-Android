@@ -138,6 +138,7 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.navVoice).setOnClickListener { showPage(R.id.voicePage) }
         findViewById<Button>(R.id.navProfile).setOnClickListener { showPage(R.id.profilePage) }
 
+        chatLog.text = ""
         val savedChat = preferences.getString("chat_history", "").orEmpty()
         if (savedChat.isNotBlank()) chatLog.text = savedChat
         else appendChat("ZENO", "Assalomu alaykum. Men ZENOman. Avval yozishib tanishamiz — xohlasangiz keyin ovozli suhbatni yoqishingiz mumkin.")
