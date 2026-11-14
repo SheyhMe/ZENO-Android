@@ -200,6 +200,10 @@ class MainActivity : Activity() {
                     if (history.isNotEmpty()) {
                         chatLog.text = history.joinToString("\n\n") { it.first + "\n" + it.second }
                         historyPrefs.edit().putString("chat", chatLog.text.toString()).apply()
+                    } else {
+                        kotlinx.coroutines.withContext(Dispatchers.IO) {
+                            SupabaseCloud.syncHistory(this@MainActivity, chatLog.text.toString())
+                        }
                     }
                     dialog.dismiss()
                 }
