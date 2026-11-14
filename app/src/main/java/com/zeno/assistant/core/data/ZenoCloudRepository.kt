@@ -10,6 +10,7 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.serialization.Serializable
 import java.util.UUID
+import java.time.Instant
 
 /**
  * Supabase-backed identity, preferences and chat persistence.
@@ -163,6 +164,11 @@ class ZenoCloudRepository(context: Context) {
                 content = content.take(100000)
             )
         )
+        client.from("conversations").update(
+            ConversationTimestampUpdate(updated_at = Instant.now().toString())
+        ) {
+            filter { eq("id", conversationId) }
+        }
     }
 
     private suspend fun syncProfile(userId: String, email: String?) {
@@ -185,6 +191,9 @@ class ZenoCloudRepository(context: Context) {
         val voice_enabled: Boolean,
         val wake_phrase_enabled: Boolean
     )
+
+    @Serializable
+    private data class ConversationTimestampUpdate(val updated_at: String)
 
     @Serializable
     private data class ConversationRow(
