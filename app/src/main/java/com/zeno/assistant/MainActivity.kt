@@ -63,6 +63,8 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        // Remove legacy account tokens left by older ZENO builds; this edition is local-only.
+        getSharedPreferences("zeno_cloud_session", MODE_PRIVATE).edit().clear().apply()
         status = findViewById(R.id.statusText)
         findViewById<TextView>(R.id.cyberContent).text = CyberSecurityKnowledge.overview
         val orb = findViewById<View>(R.id.orbContainer)
