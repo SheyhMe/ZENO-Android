@@ -159,7 +159,7 @@ class MainActivity : AppCompatActivity() {
             try {
                 cloudRepository.awaitSession()
                 if (cloudRepository.isSignedIn()) {
-                    cloudRepository.startConversation()
+                    restoreCloudState()
                     syncCloudSettings()
                 }
             } catch (_: Exception) {
@@ -293,6 +293,34 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    private suspend fun restoreCloudState() {
+        val cloudSettings = cloudRepository.loadSettings()
+        if (cloudSettings != null) {
+            preferences.edit()
+                .putString("language", cloudSettings.language)
+                .putString("theme_mode", cloudSettings.theme)
+                .apply()
+            AppCompatDelegate.setDefaultNightMode(when (cloudSettings.theme) {
+                "dark" -> AppCompatDelegate.MODE_NIGHT_YES
+                "light" -> AppCompatDelegate.MODE_NIGHT_NO
+                else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+            })
+            applyLanguage()
+        }
+
+        val messages = cloudRepository.restoreLatestConversation()
+        val restored = messages.joinToString("\n\n") { (role, content) ->
+            val sender = if (role == "user") {
+                if (preferences.getString("language", "uz") == "en") "You" else "Siz"
+            } else "ZENO"
+            "$sender\n$content"
+        }
+        chatLog.text = restored
+        if (restored.isBlank()) preferences.edit().remove("chat_history").apply()
+        else preferences.edit().putString("chat_history", restored).apply()
+        cloudRepository.startConversation()
+    }
+
     private fun refreshAccountButton() {
         val button = findViewById<Button>(R.id.accountButton) ?: return
         val email = cloudRepository.signedInEmail()
@@ -327,6 +355,8 @@ class MainActivity : AppCompatActivity() {
                     textScope.launch {
                         try {
                             cloudRepository.signOut()
+                            chatLog.text = ""
+                            preferences.edit().remove("chat_history").apply()
                             refreshAccountButton()
                             Toast.makeText(this@MainActivity, "Hisobdan chiqildi", Toast.LENGTH_SHORT).show()
                         } catch (e: Exception) {
@@ -378,6 +408,7 @@ class MainActivity : AppCompatActivity() {
                 textScope.launch {
                     try {
                         cloudRepository.signIn(email, password)
+                        restoreCloudState()
                         syncCloudSettings()
                         refreshAccountButton()
                         dialog.dismiss()
@@ -398,6 +429,7 @@ class MainActivity : AppCompatActivity() {
                     try {
                         val signedIn = cloudRepository.signUp(email, password)
                         if (signedIn) {
+                            restoreCloudState()
                             syncCloudSettings()
                             refreshAccountButton()
                             dialog.dismiss()
