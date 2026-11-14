@@ -116,7 +116,7 @@
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:text="Ilovalar" android:textColor="@color/zeno_text" android:textSize="22sp"
                     android:fontFamily="sans-serif-medium" android:paddingTop="8dp"/>
-                <EditText android:layout_width="match_parent" android:layout_height="48dp"
+                <EditText android:id="@+id/appSearchInput" android:layout_width="match_parent" android:layout_height="48dp"
                     android:layout_marginTop="12dp" android:hint="⌕   Ilova qidirish..."
                     android:singleLine="true" android:paddingStart="15dp"
                     android:background="@drawable/rounded_input" android:textColor="@color/zeno_text"
