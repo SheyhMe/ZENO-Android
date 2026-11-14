@@ -575,6 +575,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.languageButton).text =
             if (english) "Language: English (tap to use Uzbek)" else "Til: O‘zbekcha (English uchun bosing)"
         findViewById<Button>(R.id.permissionsButton).text = if (english) "App permissions" else "Ilova ruxsatlari"
+        findViewById<Button>(R.id.memoryButton).text = if (english) "🧠  Memories" else "🧠  Xotiralar"
         val themeMode = preferences.getString("theme_mode", "system")
         findViewById<Button>(R.id.themeButton).text = when (themeMode) {
             "dark" -> if (english) "Theme: Dark (tap to cycle)" else "Mavzu: Tungi (almashtirish)"
