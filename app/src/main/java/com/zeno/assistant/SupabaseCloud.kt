@@ -72,6 +72,17 @@ object SupabaseCloud {
         }
     }
 
+    fun syncHistory(context: Context, chatText: String) {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        if (prefs.getString(CONVERSATION_ID, null) != null || !isSignedIn(context)) return
+        chatText.split("\n\n").forEach { block ->
+            val parts = block.split("\n", limit = 2)
+            if (parts.size == 2 && parts[1].isNotBlank()) {
+                saveMessage(context, parts[0].trim(), parts[1].trim())
+            }
+        }
+    }
+
     fun loadMessages(context: Context): List<Pair<String, String>> {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val conversationId = prefs.getString(CONVERSATION_ID, null) ?: return emptyList()
