@@ -672,7 +672,8 @@ class MainActivity : AppCompatActivity() {
             try {
                 var response = cloudRepository.sendAiMessage(context)
                 if (response.actions.isNotEmpty()) {
-                    val actionResults = response.actions.take(6).map { action ->
+                    val actionsToRun = response.actions.take(6)
+                    val actionResults = actionsToRun.map { action ->
                         val tool = AndroidActionTools.create(this@MainActivity)[action.name]
                         val result = try {
                             tool?.execute(action.arguments)
@@ -687,7 +688,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         ZenoAiToolResult(action.callId, output)
                     }
-                    response = cloudRepository.sendAiMessage(context, response.actions, actionResults)
+                    response = cloudRepository.sendAiMessage(context, actionsToRun, actionResults)
                 }
                 appendChat("ZENO", response.reply.ifBlank { "Amal bajarildi." })
                 status.text = "ZENO AI tayyor"
