@@ -1,18 +1,26 @@
-# ZENO Android — first build
+# ZENO Android
 
-A native Kotlin Android starter for Uzbek voice commands. It currently supports button-activated speech recognition, spoken replies (if the phone has a compatible Uzbek TTS voice), launching installed apps by name, opening alarm/timer UI, opening the dialer, opening the SMS composer, and web search.
+Native Kotlin Android personal assistant with Uzbek/English AI chat, optional voice interaction, and local Android actions.
 
-## Build on GitHub (phone only)
-1. Create or open `https://github.com/SheyhMe/ZENO-Android`.
-2. Upload the contents of this ZIP to the repository root (not the ZIP file itself). Keep the `.github/workflows/android.yml` path.
-3. Commit to `main`.
-4. Open the repository's **Actions** tab and wait for **Build ZENO APK** to finish.
-5. Open the successful run, download the `ZENO-debug-apk` artifact, extract it, and install `app-debug.apk`.
+## Current features
+- Text chat and voice conversations through the configured ElevenLabs ZENO agent.
+- Uzbek/English language detection in the voice agent.
+- Optional “Hey ZENO” foreground microphone mode (Android microphone permission and notification required).
+- Open installed apps by visible app name; quick app launcher search.
+- Google search opens Google results in Chrome only; it does not automatically open search results.
+- Android system screens for alarms, timers, Wi-Fi, Bluetooth, Maps, dialer, SMS composer, and calendar.
+- Local chat history saved on the device.
+- Optional Supabase email account and per-user cloud chat history. Email confirmation may be required by project Auth settings.
+- Light/dark appearance follows Android system theme.
 
-## Current limits
-- No always-listening “Hey ZENO” wake phrase yet; listening starts when you tap the button.
-- Android speech recognition availability and Uzbek recognition depend on the installed speech service and network.
-- The app opens the dialer and SMS composer; it does not place calls or send messages automatically.
-- Alarm and timer actions open the phone's clock UI for confirmation.
-- Accessibility control, system-setting toggles, persistent reminders, cloud AI chat, and ElevenLabs voice are not implemented yet.
-- Android restricts background microphone use and protected settings. Do not grant Accessibility permissions to untrusted apps.
+## Privacy and safety
+- The Android app contains only the Supabase **publishable** key. No service-role or secret key is embedded in the APK.
+- Supabase tables use Row Level Security and user ownership policies.
+- Calls and SMS are never sent automatically; Android opens the dialer or message composer for user confirmation.
+- Alarm and timer actions open the Clock app for confirmation.
+- Voice listening is opt-in and uses Android's foreground-service notification. Stop listening from the Voice page or notification.
+- Local history stays on the device unless the user signs in and enables cloud sync.
+
+## Build
+GitHub Actions builds a debug APK for pushes to `main` and `zeno-v2`.
+Open the repository Actions tab, select the latest successful **Build ZENO APK** run, then download the `ZENO-debug-apk` artifact.
