@@ -18,11 +18,11 @@
                 android:text="ZENO" android:textColor="@color/zeno_text" android:textSize="19sp"
                 android:fontFamily="sans-serif-medium" android:letterSpacing="0.08"/>
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="● ONLINE" android:textColor="@color/zeno_status" android:textSize="10sp"/>
+                android:id="@+id/statusIndicator" android:text="● READY" android:textColor="@color/zeno_status" android:textSize="10sp"/>
         </LinearLayout>
-        <TextView android:layout_width="38dp" android:layout_height="38dp"
+        <TextView android:id="@+id/gearSettings" android:layout_width="38dp" android:layout_height="38dp"
             android:gravity="center" android:background="@drawable/zeno_surface"
-            android:text="⚙" android:textColor="@color/zeno_accent_soft" android:textSize="19sp"/>
+            android:clickable="true" android:focusable="true" android:text="⚙" android:textColor="@color/zeno_accent_soft" android:textSize="19sp"/>
     </LinearLayout>
 
     <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
@@ -116,7 +116,7 @@
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:text="Ilovalar" android:textColor="@color/zeno_text" android:textSize="22sp"
                     android:fontFamily="sans-serif-medium" android:paddingTop="8dp"/>
-                <EditText android:layout_width="match_parent" android:layout_height="48dp"
+                <EditText android:id="@+id/appsSearchInput" android:layout_width="match_parent" android:layout_height="48dp"
                     android:layout_marginTop="12dp" android:hint="⌕   Ilova qidirish..."
                     android:singleLine="true" android:paddingStart="15dp"
                     android:background="@drawable/rounded_input" android:textColor="@color/zeno_text"
@@ -132,6 +132,13 @@
                     <Button android:id="@+id/alarmButton" style="@style/AppTile" android:text="◷&#10;Budilnik"/>
                     <Button android:id="@+id/timerButton" style="@style/AppTile" android:text="◴&#10;Taymer"/>
                 </GridLayout>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp" android:text="O‘rnatilgan ilovalar"
+                    android:textColor="@color/zeno_text" android:textSize="17sp"
+                    android:fontFamily="sans-serif-medium"/>
+                <LinearLayout android:id="@+id/installedAppsContainer"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:layout_marginTop="8dp"/>
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:text="Tezkor buyruqlar" android:textColor="#F2EDFF" android:textSize="17sp"
                     android:layout_marginTop="18dp" android:fontFamily="sans-serif-medium"/>
@@ -179,11 +186,19 @@
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:text="Sozlamalar" android:textColor="@color/zeno_text" android:textSize="22sp"
                     android:fontFamily="sans-serif-medium" android:paddingTop="8dp"/>
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                <TextView android:id="@+id/settingsInfo" android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:layout_marginTop="16dp" android:padding="18dp"
                     android:background="@drawable/zeno_surface"
-                    android:text="ZENO — shaxsiy AI yordamchingiz&#10;&#10;Til: O‘zbek / English&#10;AI Chat: Matnli rejim&#10;Ovoz: Ixtiyoriy&#10;Wake word: Hey ZENO"
+                    android:text="ZENO — shaxsiy AI yordamchingiz&#10;&#10;Til: O‘zbek / English&#10;Mavzu: Telefon sozlamasiga mos&#10;AI Chat: Matnli rejim&#10;Ovoz: Ixtiyoriy&#10;Wake word: Hey ZENO"
                     android:textColor="@color/zeno_text" android:textSize="14sp" android:lineSpacingExtra="7dp"/>
+                <Button android:id="@+id/languageButton" android:layout_width="match_parent"
+                    android:layout_height="52dp" android:layout_marginTop="12dp"
+                    android:background="@drawable/zeno_primary_button" android:text="Tilni o‘zgartirish / Change language"
+                    android:textAllCaps="false" android:textColor="@color/zeno_text"/>
+                <Button android:id="@+id/permissionsButton" android:layout_width="match_parent"
+                    android:layout_height="52dp" android:layout_marginTop="8dp"
+                    android:background="@drawable/zeno_surface" android:text="Ilova ruxsatlari"
+                    android:textAllCaps="false" android:textColor="@color/zeno_text"/>
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:layout_marginTop="12dp" android:padding="16dp"
                     android:background="@drawable/zeno_surface"
