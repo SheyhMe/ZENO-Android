@@ -16,6 +16,13 @@ import java.util.UUID
  * The embedded key is a publishable client key; RLS is the security boundary.
  * Never add a service-role or secret key to this Android app.
  */
+data class CloudPreferenceSnapshot(
+    val language: String,
+    val theme: String,
+    val voiceEnabled: Boolean,
+    val wakePhraseEnabled: Boolean
+)
+
 class ZenoCloudRepository(context: Context) {
     private val preferences = context.applicationContext.getSharedPreferences("zeno_cloud", Context.MODE_PRIVATE)
 
