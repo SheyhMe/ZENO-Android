@@ -6,6 +6,23 @@ type ChatMessage = {
 const MAX_MESSAGES = 20;
 const MAX_MESSAGE_LENGTH = 6000;
 
+const DEVICE_TOOLS = [
+  { type: "function", name: "open_youtube", description: "Open YouTube on the user's Android phone.", parameters: { type: "object", properties: {}, required: [] } },
+  { type: "function", name: "open_telegram", description: "Open Telegram on the user's Android phone.", parameters: { type: "object", properties: {}, required: [] } },
+  { type: "function", name: "open_instagram", description: "Open Instagram on the user's Android phone.", parameters: { type: "object", properties: {}, required: [] } },
+  { type: "function", name: "open_chrome", description: "Open Google Chrome on the user's Android phone.", parameters: { type: "object", properties: {}, required: [] } },
+  { type: "function", name: "open_camera", description: "Open the camera app on the user's Android phone.", parameters: { type: "object", properties: {}, required: [] } },
+  { type: "function", name: "open_maps", description: "Open Google Maps on the user's Android phone.", parameters: { type: "object", properties: {}, required: [] } },
+  { type: "function", name: "open_app", description: "Open an installed Android app by its visible name.", parameters: { type: "object", properties: { app_name: { type: "string", description: "Visible app name" } }, required: ["app_name"] } },
+  { type: "function", name: "go_home", description: "Return to the Android home screen.", parameters: { type: "object", properties: {}, required: [] } },
+  { type: "function", name: "open_wifi_settings", description: "Open Android Wi-Fi settings.", parameters: { type: "object", properties: {}, required: [] } },
+  { type: "function", name: "open_bluetooth_settings", description: "Open Android Bluetooth settings.", parameters: { type: "object", properties: {}, required: [] } },
+  { type: "function", name: "set_alarm", description: "Open Android alarm setup with the requested time. The user confirms the alarm in Android UI.", parameters: { type: "object", properties: { hour: { type: "integer", minimum: 0, maximum: 23 }, minute: { type: "integer", minimum: 0, maximum: 59 }, label: { type: "string" } }, required: ["hour"] } },
+  { type: "function", name: "set_timer", description: "Open Android timer setup for the requested duration in seconds.", parameters: { type: "object", properties: { duration_seconds: { type: "integer", minimum: 1, maximum: 86400 } }, required: ["duration_seconds"] } },
+  { type: "function", name: "search_web", description: "Open Google search results for a query in Chrome. Do not open result websites automatically.", parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } },
+  { type: "function", name: "open_maps_search", description: "Open a Google Maps search for a place or address.", parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } }
+];
+
 function replyError(res: any, status: number, error: string) {
   res.status(status).json({ error });
 }
@@ -55,6 +72,23 @@ export default async function handler(req: any, res: any) {
       return replyError(res, 400, "The last message must be a valid user message");
     }
 
+    const toolCalls = Array.isArray(body.toolCalls) ? body.toolCalls.slice(0, 8) : [];
+    const toolResults = Array.isArray(body.toolResults) ? body.toolResults.slice(0, 8) : [];
+    const input = [
+      ...messages.map((message) => ({ type: "message", ...message })),
+      ...toolCalls.map((call: any) => ({
+        type: "function_call",
+        call_id: String(call.call_id ?? ""),
+        name: String(call.name ?? ""),
+        arguments: JSON.stringify(call.arguments ?? {}),
+      })),
+      ...toolResults.map((result: any) => ({
+        type: "function_call_output",
+        call_id: String(result.call_id ?? ""),
+        output: String(result.output ?? ""),
+      })),
+    ];
+
     const aiResponse = await fetch("https://ai-gateway.vercel.sh/v1/responses", {
       method: "POST",
       headers: {
@@ -69,9 +103,13 @@ export default async function handler(req: any, res: any) {
           "Use natural, clear Uzbek when the user writes Uzbek. Address the user respectfully with siz.",
           "Be practical and concise. Do not claim to control the user's phone or complete external actions.",
           "If a request needs a phone action, explain that the user can use ZENO's voice controls for that action.",
+          "Use device tools when the user clearly requests an Android action. Do not claim an action succeeded until the device tool result confirms it.",
+          "For web searches, use search_web which opens Google results in Chrome; never open result websites automatically.",
           "Never invent live facts, search results, or completed actions."
         ].join("\n"),
-        input: messages.map((message) => ({ type: "message", ...message })),
+        input,
+        tools: DEVICE_TOOLS,
+        tool_choice: "auto",
         max_output_tokens: 1200,
       }),
     });
@@ -85,6 +123,18 @@ export default async function handler(req: any, res: any) {
     }
 
     const result = await aiResponse.json();
+    const actions = (result.output ?? [])
+      .filter((item: any) => item.type === "function_call" && typeof item.name === "string")
+      .map((item: any) => {
+        let args: any = {};
+        try { args = JSON.parse(item.arguments ?? "{}"); } catch { args = {}; }
+        return { call_id: item.call_id, name: item.name, arguments: args };
+      });
+
+    if (actions.length > 0) {
+      return res.status(200).json({ reply: "", actions, model: "openai/gpt-5.4-mini" });
+    }
+
     const text = typeof result.output_text === "string"
       ? result.output_text.trim()
       : (result.output ?? [])
@@ -95,7 +145,7 @@ export default async function handler(req: any, res: any) {
           .trim();
 
     if (!text) return replyError(res, 502, "AI javobi bo'sh qaytdi.");
-    return res.status(200).json({ reply: text, model: "openai/gpt-5.4-mini" });
+    return res.status(200).json({ reply: text, actions: [], model: "openai/gpt-5.4-mini" });
   } catch {
     return replyError(res, 500, "ZENO serverida vaqtinchalik xatolik yuz berdi.");
   }
