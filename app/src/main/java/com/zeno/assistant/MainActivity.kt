@@ -1,6 +1,7 @@
 package com.zeno.assistant
 
 import android.Manifest
+import android.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import android.content.BroadcastReceiver
@@ -31,6 +32,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import android.text.Editable
+import android.text.InputType
 import android.text.TextWatcher
 import java.util.Locale
 
@@ -48,6 +50,7 @@ class MainActivity : AppCompatActivity() {
     private val permissionRequest = 102
     private val notificationPermissionRequest = 103
     private val preferences by lazy { getSharedPreferences("zeno_preferences", MODE_PRIVATE) }
+    private val cloudRepository by lazy { com.zeno.assistant.core.data.ZenoCloudRepository(applicationContext) }
 
     private val voiceReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -111,11 +114,13 @@ class MainActivity : AppCompatActivity() {
             val next = if (preferences.getString("language", "uz") == "uz") "en" else "uz"
             preferences.edit().putString("language", next).apply()
             applyLanguage()
+            syncCloudSettings()
         }
         findViewById<Button>(R.id.permissionsButton).setOnClickListener {
             startActivity(Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                 Uri.parse("package:$packageName")))
         }
+        findViewById<Button>(R.id.accountButton).setOnClickListener { showAccountDialog() }
         val appsSearch = findViewById<EditText>(R.id.appsSearchInput)
         appsSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -150,6 +155,18 @@ class MainActivity : AppCompatActivity() {
         val savedChat = preferences.getString("chat_history", "").orEmpty()
         if (savedChat.isNotBlank()) chatLog.text = savedChat
         else appendChat("ZENO", "Assalomu alaykum. Men ZENOman. Avval yozishib tanishamiz — xohlasangiz keyin ovozli suhbatni yoqishingiz mumkin.")
+        textScope.launch {
+            try {
+                cloudRepository.awaitSession()
+                if (cloudRepository.isSignedIn()) {
+                    cloudRepository.startConversation()
+                    syncCloudSettings()
+                }
+            } catch (_: Exception) {
+                // The app remains usable in local mode when cloud access is unavailable.
+            }
+            refreshAccountButton()
+        }
     }
 
     private fun showPage(pageId: Int) {
@@ -268,11 +285,133 @@ class MainActivity : AppCompatActivity() {
             else -> "system"
         }
         preferences.edit().putString("theme_mode", next).apply()
+        syncCloudSettings()
         AppCompatDelegate.setDefaultNightMode(when (next) {
             "dark" -> AppCompatDelegate.MODE_NIGHT_YES
             "light" -> AppCompatDelegate.MODE_NIGHT_NO
             else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
         })
+    }
+
+    private fun refreshAccountButton() {
+        val button = findViewById<Button>(R.id.accountButton) ?: return
+        val email = cloudRepository.signedInEmail()
+        button.text = if (email.isNullOrBlank()) {
+            if (preferences.getString("language", "uz") == "en") "☁  Sign in to sync" else "☁  ZENO Cloud — Kirish"
+        } else {
+            "☁  $email"
+        }
+    }
+
+    private fun syncCloudSettings() {
+        textScope.launch {
+            try {
+                cloudRepository.syncSettings(
+                    language = preferences.getString("language", "uz") ?: "uz",
+                    theme = preferences.getString("theme_mode", "system") ?: "system",
+                    voiceEnabled = voiceActive,
+                    wakePhraseEnabled = voiceActive
+                )
+            } catch (_: Exception) {
+                // Cloud sync is best-effort; local settings remain available.
+            }
+        }
+    }
+
+    private fun showAccountDialog() {
+        if (cloudRepository.isSignedIn()) {
+            AlertDialog.Builder(this)
+                .setTitle("ZENO Cloud")
+                .setMessage(cloudRepository.signedInEmail() ?: "Hisob ulangan")
+                .setPositiveButton("Chiqish") { _, _ ->
+                    textScope.launch {
+                        try {
+                            cloudRepository.signOut()
+                            refreshAccountButton()
+                            Toast.makeText(this@MainActivity, "Hisobdan chiqildi", Toast.LENGTH_SHORT).show()
+                        } catch (e: Exception) {
+                            Toast.makeText(this@MainActivity, e.localizedMessage ?: "Xatolik", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+                .setNegativeButton("Yopish", null)
+                .show()
+            return
+        }
+
+        val emailInput = EditText(this).apply {
+            hint = "Email"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+            singleLine = true
+        }
+        val passwordInput = EditText(this).apply {
+            hint = "Parol (kamida 8 belgi)"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            singleLine = true
+        }
+        val form = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(48, 8, 48, 0)
+            addView(emailInput, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ))
+            addView(passwordInput, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ))
+        }
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("ZENO Cloud")
+            .setMessage("Suhbatlar va sozlamalarni hisobingiz bilan sinxronlang.")
+            .setView(form)
+            .setPositiveButton("Kirish", null)
+            .setNeutralButton("Ro‘yxatdan o‘tish", null)
+            .setNegativeButton("Bekor", null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val email = emailInput.text.toString().trim()
+                val password = passwordInput.text.toString()
+                if (email.isBlank() || password.isBlank()) {
+                    Toast.makeText(this, "Email va parolni kiriting", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                textScope.launch {
+                    try {
+                        cloudRepository.signIn(email, password)
+                        syncCloudSettings()
+                        refreshAccountButton()
+                        dialog.dismiss()
+                        Toast.makeText(this@MainActivity, "ZENO Cloud ulandi", Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        Toast.makeText(this@MainActivity, e.localizedMessage ?: "Kirish amalga oshmadi", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
+                val email = emailInput.text.toString().trim()
+                val password = passwordInput.text.toString()
+                if (email.isBlank() || password.isBlank()) {
+                    Toast.makeText(this, "Email va parolni kiriting", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                textScope.launch {
+                    try {
+                        val signedIn = cloudRepository.signUp(email, password)
+                        if (signedIn) {
+                            syncCloudSettings()
+                            refreshAccountButton()
+                            dialog.dismiss()
+                            Toast.makeText(this@MainActivity, "Hisob yaratildi va ulandi", Toast.LENGTH_LONG).show()
+                        } else {
+                            Toast.makeText(this@MainActivity, "Emailingizga tasdiqlash havolasi yuborildi. Tasdiqlagach, tizimga kiring.", Toast.LENGTH_LONG).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(this@MainActivity, e.localizedMessage ?: "Ro‘yxatdan o‘tish amalga oshmadi", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
+        dialog.show()
     }
 
     private fun applyLanguage() {
@@ -370,7 +509,14 @@ class MainActivity : AppCompatActivity() {
         val updated = (if (current.isBlank()) "" else "$current\n\n") + "$sender\n$message"
         chatLog.text = if (updated.length > 6000) updated.takeLast(6000) else updated
         preferences.edit().putString("chat_history", chatLog.text.toString()).apply()
-    }
+        val role = if (sender == "Siz" || sender == "You") "user" else "assistant"
+        textScope.launch {
+            try {
+                cloudRepository.saveMessage(role, message)
+            } catch (_: Exception) {
+                // Keep local chat responsive if the cloud is offline.
+            }
+        }
 
     override fun onDestroy() {
         orbPulse?.cancel()
