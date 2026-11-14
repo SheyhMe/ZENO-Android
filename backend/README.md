@@ -1,6 +1,6 @@
 # ZENO private backend
 
-This Vercel serverless API provides authenticated text chat through Vercel AI Gateway.
+This Vercel serverless API provides authenticated ZENO AI chat, user-approved memory context, and Android device-action requests through Vercel AI Gateway.
 
 ## Runtime configuration
 
@@ -29,7 +29,7 @@ Body:
 }
 ```
 
-The endpoint accepts the latest 20 user/assistant messages, enforces per-message size limits, does not persist request content in backend logs, and returns `{ "reply": "..." }`.
+The endpoint accepts the latest 20 user/assistant messages, enforces per-message size limits, loads only the signed-in user's active memories through Supabase RLS, and returns either a text reply or a list of device actions for the Android app to execute. The Android app sends the action results back so the model can confirm what actually happened. The endpoint also exposes a public GET health check.
 
 ## Deployment
 
