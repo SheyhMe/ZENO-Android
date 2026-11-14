@@ -194,6 +194,15 @@ class MainActivity : Activity() {
                 Toast.makeText(this@MainActivity, message, Toast.LENGTH_LONG).show()
                 if (SupabaseCloud.isSignedIn(this@MainActivity)) {
                     accountButton.text = "Hisob faol — boshqarish"
+                    val currentUserId = SupabaseCloud.currentUserId(this@MainActivity)
+                    val previousOwner = historyPrefs.getString("cloud_owner_user_id", null)
+                    if (previousOwner != null && previousOwner != currentUserId) {
+                        historyPrefs.edit().remove("chat").apply()
+                        chatLog.text = ""
+                    }
+                    if (currentUserId != null) {
+                        historyPrefs.edit().putString("cloud_owner_user_id", currentUserId).apply()
+                    }
                     val history = kotlinx.coroutines.withContext(Dispatchers.IO) {
                         SupabaseCloud.loadMessages(this@MainActivity)
                     }
