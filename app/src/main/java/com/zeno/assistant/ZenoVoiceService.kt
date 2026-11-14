@@ -66,10 +66,16 @@ class ZenoVoiceService : Service() {
     private fun startWakeWordMode() {
         if (wakeListening || session != null) return
         val notification = buildNotification("“Hey ZENO” deb chaqiring")
-        if (Build.VERSION.SDK_INT >= 34) {
-            startForeground(NOTIFICATION_ID, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE)
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
+        try {
+            if (Build.VERSION.SDK_INT >= 34) {
+                startForeground(NOTIFICATION_ID, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE)
+            } else {
+                startForeground(NOTIFICATION_ID, notification)
+            }
+        } catch (e: Exception) {
+            broadcastStatus("MIKROFON XATOSI: " + (e.message ?: e.javaClass.simpleName))
+            stopSelf()
+            return
         }
         broadcastStatus("“Hey ZENO” buyrug'ini kutyapman")
         startWakeRecognizer()
@@ -93,9 +99,10 @@ class ZenoVoiceService : Service() {
             override fun onEndOfSpeech() {}
             override fun onError(error: Int) {
                 wakeListening = false
+                broadcastStatus("Ovoz tanish xatosi: " + error + ". Qayta ulanmoqda...")
                 try { speechRecognizer?.destroy() } catch (_: Exception) {}
                 speechRecognizer = null
-                if (!stopping) handler.postDelayed({ startWakeRecognizer() }, 1200)
+                if (!stopping) handler.postDelayed({ startWakeRecognizer() }, 2500)
             }
             override fun onResults(results: android.os.Bundle?) {
                 wakeListening = false
@@ -146,8 +153,8 @@ class ZenoVoiceService : Service() {
                 try {
                     val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US")
-                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "en-US")
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "uz-UZ")
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "uz-UZ")
                         putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                         putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
                     }
