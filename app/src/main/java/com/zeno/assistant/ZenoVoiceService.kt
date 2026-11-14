@@ -302,13 +302,19 @@ class ZenoVoiceService : Service() {
         override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
             val query = (parameters["query"] ?: parameters["search_query"] ?: "").toString().trim()
             if (query.isBlank()) return ClientToolResult.failure("Qidiruv matni bo‘sh")
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=" + Uri.encode(query)))
+            val searchUri = Uri.parse("https://www.google.com/search?q=" + Uri.encode(query))
+            val intent = Intent(Intent.ACTION_VIEW, searchUri)
+                .setPackage("com.android.chrome")
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             return try {
-                startActivity(intent)
-                ClientToolResult.success("Qidiruv natijalari ochildi")
+                if (intent.resolveActivity(packageManager) == null) {
+                    ClientToolResult.failure("Google Chrome o‘rnatilmagan. Qidiruv uchun Chrome kerak.")
+                } else {
+                    startActivity(intent)
+                    ClientToolResult.success("Google qidiruv natijalari Chrome’da ochildi")
+                }
             } catch (e: Exception) {
-                ClientToolResult.failure("Brauzer ochilmadi: ${e.localizedMessage ?: "xatolik"}")
+                ClientToolResult.failure("Chrome’da qidiruv ochilmadi: ${e.localizedMessage ?: "xatolik"}")
             }
         }
     }
