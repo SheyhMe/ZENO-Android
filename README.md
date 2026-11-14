@@ -36,6 +36,14 @@ The target design uses OAuth 2.0/OIDC for optional account connections, OpenAI f
 - Ask for in-app confirmation before external side effects such as sending email or changing calendar events.
 - Android permissions and protected system settings must remain under the user's control.
 
-## Current prerequisites
+## Supabase cloud foundation
 
-The connected accounts currently expose no Supabase projects or Vercel teams. Backend deployment and live OAuth integrations therefore remain unconfigured. The owner must create/select those resources and register provider OAuth applications before those features can be enabled. See the integration setup guide for the exact configuration checklist.
+The `zeno-core` project is provisioned in Frankfurt. The Android app now includes Supabase Auth and PostgREST client wiring, an email/password account entry in Settings, and cloud writes for authenticated chat messages and preferences.
+
+The database contains `profiles`, `conversations`, `messages`, `user_memories` and `assistant_preferences`. RLS is enabled on every table; client access is limited to authenticated users and rows owned by their own account. The Android app contains only the public publishable key, never a service-role key.
+
+For production sign-ups, configure a custom SMTP provider in Supabase Auth. Supabase's built-in email sender only delivers to organization team addresses and is limited to 2 messages/hour. See [Supabase SMTP setup](https://supabase.com/docs/guides/auth/auth-smtp).
+
+## Remaining prerequisites
+
+The private OpenAI orchestration backend, Vercel deployment, ElevenLabs server-side key handling, and Google/Notion/GitHub OAuth app credentials are not yet configured. Provider credentials and SMTP secrets must be supplied through their respective secure dashboards; do not commit them to this repository. See the integration setup guide.
