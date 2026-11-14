@@ -20,6 +20,8 @@ import android.widget.TextView
 import android.widget.Toast
 import android.widget.ScrollView
 import android.view.inputmethod.EditorInfo
+import io.elevenlabs.ClientTool
+import io.elevenlabs.ClientToolResult
 import io.elevenlabs.ConversationClient
 import io.elevenlabs.ConversationConfig
 import io.elevenlabs.ConversationSession
@@ -203,6 +205,75 @@ class MainActivity : Activity() {
         sendTextMessage(message)
     }
 
+    private fun createTextClientTools(): Map<String, ClientTool> {
+        fun tool(action: (Map<String, Any>) -> String?): ClientTool = object : ClientTool {
+            override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
+                return try {
+                    val result = action(parameters)
+                    if (result.isNullOrBlank()) ClientToolResult.failure("Buyruqni bajarib bo‘lmadi")
+                    else ClientToolResult.success(result)
+                } catch (error: Exception) {
+                    ClientToolResult.failure(error.localizedMessage ?: "Android amali bajarilmadi")
+                }
+            }
+        }
+        fun local(command: String) = LocalCommandRouter.execute(this@MainActivity, command)
+        fun launch(name: String) = tool { local("och " + name) }
+
+        val tools = mutableMapOf<String, ClientTool>()
+        tools["open_youtube"] = launch("YouTube")
+        tools["open_telegram"] = launch("Telegram")
+        tools["open_instagram"] = launch("Instagram")
+        tools["open_chrome"] = launch("Chrome")
+        tools["open_camera"] = launch("Kamera")
+        tools["open_app"] = tool { p -> local("och " + (p["app_name"] ?: p["name"] ?: "").toString()) }
+        tools["open_maps"] = tool {
+            val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("geo:0,0?q="))
+                .setPackage("com.google.android.apps.maps").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+            "Google Maps ochildi."
+        }
+        tools["open_maps_search"] = tool { p ->
+            local("xaritada " + (p["query"] ?: "").toString())
+        }
+        tools["open_wifi_settings"] = tool { local("wifi") }
+        tools["open_bluetooth_settings"] = tool { local("bluetooth") }
+        tools["search_web"] = tool { p ->
+            local("Internetdan qidir: " + (p["query"] ?: "").toString())
+        }
+        tools["set_alarm"] = tool { p ->
+            val hour = (p["hour"]?.toString()?.toIntOrNull() ?: 7).coerceIn(0, 23)
+            val minute = (p["minute"]?.toString()?.toIntOrNull() ?: 0).coerceIn(0, 59)
+            local("budilnik %02d:%02d".format(hour, minute))
+        }
+        tools["set_timer"] = tool { p ->
+            val seconds = (p["duration_seconds"]?.toString()?.toIntOrNull() ?: 600).coerceIn(1, 86400)
+            val intent = Intent(android.provider.AlarmClock.ACTION_SET_TIMER)
+                .putExtra(android.provider.AlarmClock.EXTRA_LENGTH, seconds)
+                .putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, "ZENO taymer")
+                .putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, false)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+            "Taymer sozlash oynasi ochildi; tasdiqlashni Clock ilovasida bajaring."
+        }
+        tools["open_dialer"] = tool { p ->
+            local("qo‘ng‘iroq " + (p["phone_number"] ?: p["number"] ?: "").toString())
+        }
+        tools["compose_sms"] = tool { p ->
+            val number = (p["phone_number"] ?: p["number"] ?: "").toString()
+            val body = (p["message"] ?: "").toString()
+            local("sms " + number + ": " + body)
+        }
+        tools["open_calendar"] = tool { local("kalendar") }
+        tools["go_home"] = tool {
+            startActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            "Telefonning asosiy ekrani ochildi."
+        }
+        tools["close_current_app"] = tools["go_home"]!!
+        return tools
+    }
+
     private fun sendTextMessage(message: String) {
         val active = textSession
         if (active != null) {
@@ -218,6 +289,7 @@ class MainActivity : Activity() {
                 val config = ConversationConfig(
                     agentId = agentId,
                     textOnly = true,
+                    clientTools = createTextClientTools(),
                     onConnect = {
                         runOnUiThread { status.text = "ZENO matnli rejimda tayyor" }
                     },
