@@ -15,6 +15,15 @@ object LocalCommandRouter {
         val normalized = text.lowercase(Locale.ROOT)
         return try {
             when {
+                normalized in listOf("orqaga", "ortga", "back") -> accessibility(context, "back")
+                normalized in listOf("bosh ekran", "asosiy ekran", "home") -> accessibility(context, "home")
+                normalized in listOf("oxirgi ilovalar", "recent apps", "recent") -> accessibility(context, "recents")
+                normalized.contains("bildirishnomalarni och") || normalized == "bildirishnomalar" -> accessibility(context, "notifications")
+                normalized.contains("tez sozlamalarni och") || normalized == "quick settings" -> accessibility(context, "quick_settings")
+                normalized.startsWith("pastga aylantir") || normalized == "pastga sur" -> accessibility(context, "scroll_down")
+                normalized.startsWith("yuqoriga aylantir") || normalized == "yuqoriga sur" -> accessibility(context, "scroll_up")
+                normalized.startsWith("bos ") || normalized.startsWith("bosing ") -> accessibility(context, "click:" + text.substringAfter(" ").trim())
+                normalized.startsWith("yoz ") || normalized.startsWith("matn kirit ") -> accessibility(context, "type:" + text.substringAfter(" ").trim())
                 normalized.startsWith("internetdan qidir") || normalized.startsWith("google dan qidir") ||
                     normalized.startsWith("qidir:") || normalized.startsWith("search:") -> {
                     val query = text.substringAfter(":", text.substringAfter("qidir", "")).trim()
@@ -100,6 +109,17 @@ object LocalCommandRouter {
         } catch (e: Exception) {
             "Bu amalni bajarib bo'lmadi: " + (e.localizedMessage ?: "Android ruxsati yoki mos ilova kerak")
         }
+    }
+
+    private fun accessibility(context: Context, command: String): String {
+        val enabled = android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES).orEmpty()
+        val component = android.content.ComponentName(context, ZenoAccessibilityService::class.java).flattenToString()
+        if (!enabled.split(':').any { it.equals(component, ignoreCase = true) }) {
+            context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return "Telefonni boshqarish uchun ZENO Accessibility ruxsatini yoqing."
+        }
+        context.sendBroadcast(Intent(ZenoAccessibilityService.ACTION_COMMAND).setPackage(context.packageName).putExtra(ZenoAccessibilityService.EXTRA_COMMAND, command))
+        return "Buyruq bajarish uchun yuborildi: $command"
     }
 
     private fun extractValue(text: String, prefixes: List<String>): String {
