@@ -193,6 +193,11 @@
                     android:background="@drawable/zeno_primary_button"
                     android:text="☁  ZENO Cloud — Kirish"
                     android:textAllCaps="false" android:textColor="@color/zeno_text"/>
+                <Button android:id="@+id/memoryButton" android:layout_width="match_parent"
+                    android:layout_height="52dp" android:layout_marginTop="12dp"
+                    android:background="@drawable/zeno_surface"
+                    android:text="🧠  Xotiralar / Memories"
+                    android:textAllCaps="false" android:textColor="@color/zeno_text"/>
                 <Button android:id="@+id/themeButton" android:layout_width="match_parent"
                     android:layout_height="52dp" android:layout_marginTop="12dp"
                     android:background="@drawable/zeno_surface" android:text="Mavzu: Avtomatik"
