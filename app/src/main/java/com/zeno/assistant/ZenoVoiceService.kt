@@ -12,6 +12,8 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.provider.Settings
+import android.provider.AlarmClock
+import android.net.Uri
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -185,7 +187,11 @@ class ZenoVoiceService : Service() {
             "close_current_app" to homeTool(),
             "exit_app" to homeTool(),
             "open_wifi_settings" to settingsTool(Settings.ACTION_WIFI_SETTINGS),
-            "open_bluetooth_settings" to settingsTool(Settings.ACTION_BLUETOOTH_SETTINGS)
+            "open_bluetooth_settings" to settingsTool(Settings.ACTION_BLUETOOTH_SETTINGS),
+            "set_alarm" to alarmTool(),
+            "set_timer" to timerTool(),
+            "search_web" to webSearchTool(),
+            "open_maps_search" to mapsSearchTool()
         )
         val config = ConversationConfig(
             agentId = agentId,
@@ -240,6 +246,83 @@ class ZenoVoiceService : Service() {
         broadcastStatus("ZENO yana “Hey ZENO” buyrug'ini kutyapti")
         updateNotification("“Hey ZENO” deb chaqiring")
         restartWakeRecognizer()
+    }
+
+    private fun alarmTool() = object : ClientTool {
+        override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
+            val hour = (parameters["hour"] as? Number)?.toInt()
+                ?: parameters["hour"]?.toString()?.toIntOrNull()
+            val minute = (parameters["minute"] as? Number)?.toInt()
+                ?: parameters["minute"]?.toString()?.toIntOrNull() ?: 0
+            if (hour == null || hour !in 0..23 || minute !in 0..59) {
+                return ClientToolResult.failure("Budilnik vaqti uchun hour (0-23) va minute (0-59) kerak")
+            }
+            val label = parameters["label"]?.toString()?.take(80) ?: "ZENO eslatmasi"
+            val intent = Intent(AlarmClock.ACTION_SET_ALARM)
+                .putExtra(AlarmClock.EXTRA_HOUR, hour)
+                .putExtra(AlarmClock.EXTRA_MINUTES, minute)
+                .putExtra(AlarmClock.EXTRA_MESSAGE, label)
+                .putExtra(AlarmClock.EXTRA_SKIP_UI, false)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            return try {
+                if (intent.resolveActivity(packageManager) == null) ClientToolResult.failure("Budilnik ilovasi topilmadi")
+                else { startActivity(intent); ClientToolResult.success("Budilnik sozlash oynasi ochildi") }
+            } catch (e: Exception) {
+                ClientToolResult.failure("Budilnikni ochib bo‘lmadi: ${e.localizedMessage ?: "xatolik"}")
+            }
+        }
+    }
+
+    private fun timerTool() = object : ClientTool {
+        override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
+            val seconds = (parameters["duration_seconds"] as? Number)?.toInt()
+                ?: parameters["duration_seconds"]?.toString()?.toIntOrNull()
+                ?: (parameters["minutes"] as? Number)?.toInt()?.times(60)
+                ?: parameters["minutes"]?.toString()?.toIntOrNull()?.times(60)
+            if (seconds == null || seconds !in 1..86400) {
+                return ClientToolResult.failure("Taymer uchun 1 dan 86400 gacha duration_seconds kerak")
+            }
+            val intent = Intent(AlarmClock.ACTION_SET_TIMER)
+                .putExtra(AlarmClock.EXTRA_LENGTH, seconds)
+                .putExtra(AlarmClock.EXTRA_SKIP_UI, false)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            return try {
+                if (intent.resolveActivity(packageManager) == null) ClientToolResult.failure("Taymer ilovasi topilmadi")
+                else { startActivity(intent); ClientToolResult.success("Taymer sozlash oynasi ochildi") }
+            } catch (e: Exception) {
+                ClientToolResult.failure("Taymerni ochib bo‘lmadi: ${e.localizedMessage ?: "xatolik"}")
+            }
+        }
+    }
+
+    private fun webSearchTool() = object : ClientTool {
+        override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
+            val query = (parameters["query"] ?: parameters["search_query"] ?: "").toString().trim()
+            if (query.isBlank()) return ClientToolResult.failure("Qidiruv matni bo‘sh")
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=" + Uri.encode(query)))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            return try {
+                startActivity(intent)
+                ClientToolResult.success("Qidiruv natijalari ochildi")
+            } catch (e: Exception) {
+                ClientToolResult.failure("Brauzer ochilmadi: ${e.localizedMessage ?: "xatolik"}")
+            }
+        }
+    }
+
+    private fun mapsSearchTool() = object : ClientTool {
+        override suspend fun execute(parameters: Map<String, Any>): ClientToolResult? {
+            val query = (parameters["query"] ?: parameters["place"] ?: "").toString().trim()
+            if (query.isBlank()) return ClientToolResult.failure("Joy nomi ko‘rsatilmagan")
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode(query)))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            return try {
+                startActivity(intent)
+                ClientToolResult.success("Xarita qidiruvi ochildi")
+            } catch (e: Exception) {
+                ClientToolResult.failure("Xarita ilovasi ochilmadi: ${e.localizedMessage ?: "xatolik"}")
+            }
+        }
     }
 
     private fun openTool(appName: String) = object : ClientTool {
