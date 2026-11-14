@@ -139,12 +139,8 @@ object AndroidActionTools {
     private fun launch(context: Context, intent: Intent, success: String): ClientToolResult {
         return try {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            if (intent.resolveActivity(context.packageManager) == null) {
-                ClientToolResult.failure("Bu amal uchun mos ilova topilmadi")
-            } else {
-                context.startActivity(intent)
-                ClientToolResult.success(success)
-            }
+            context.startActivity(intent)
+            ClientToolResult.success(success)
         } catch (error: Exception) {
             ClientToolResult.failure("Amal bajarilmadi: ${error.localizedMessage ?: "xatolik"}")
         }
