@@ -64,6 +64,7 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         status = findViewById(R.id.statusText)
+        findViewById<TextView>(R.id.cyberContent).text = CyberSecurityKnowledge.overview
         val orb = findViewById<View>(R.id.orbContainer)
         orbPulse = ObjectAnimator.ofPropertyValuesHolder(
             orb,
