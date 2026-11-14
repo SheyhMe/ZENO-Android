@@ -39,10 +39,8 @@ jobs:
             adb shell am start -n com.zeno.assistant/.MainActivity
             sleep 12
             adb shell pidof com.zeno.assistant
-            if adb logcat -d -s AndroidRuntime:E | grep -q "FATAL EXCEPTION"; then
-              echo "ZENO crashed during startup"
-              exit 1
-            fi
+            crash_log="$(adb logcat -d -s AndroidRuntime:E | grep "FATAL EXCEPTION" || true)"
+            if [ -n "$crash_log" ]; then echo "ZENO crashed during startup"; echo "$crash_log"; exit 1; fi
       - name: Verify deployed ZENO backend
         run: |
           url="https://zeno-private-backend-git-zeno-full-upgrade-seyhme-5727.vercel.app/api/chat"
