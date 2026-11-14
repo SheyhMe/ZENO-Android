@@ -34,6 +34,7 @@ class ZenoVoiceService : Service() {
         const val ACTION_SEND = "com.zeno.assistant.SEND_MESSAGE"
         const val ACTION_STATUS = "com.zeno.assistant.VOICE_STATUS"
         const val ACTION_TRANSCRIPT = "com.zeno.assistant.VOICE_TRANSCRIPT"
+        const val ACTION_USER_COMMAND = "com.zeno.assistant.USER_COMMAND"
         const val EXTRA_TEXT = "text"
         private const val CHANNEL_ID = "zeno_voice"
         private const val NOTIFICATION_ID = 701
@@ -210,8 +211,8 @@ class ZenoVoiceService : Service() {
                     broadcastText("ZENO", "Buyruq eshitilmadi.")
                 } else {
                     broadcastText("Siz", phrase)
-                    val result = LocalCommandRouter.execute(this@ZenoVoiceService, phrase)
-                    broadcastText("ZENO", result ?: "Bu buyruq hali qo'llab-quvvatlanmaydi: $phrase")
+                    // Forward recognized speech to the AI/local command pipeline in MainActivity.
+                    sendBroadcast(Intent(ACTION_USER_COMMAND).setPackage(packageName).putExtra(EXTRA_TEXT, phrase))
                 }
                 finishCommandCapture()
             }
