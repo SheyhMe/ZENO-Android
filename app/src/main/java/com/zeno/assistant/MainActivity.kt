@@ -29,6 +29,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 
 class MainActivity : Activity() {
     private lateinit var status: TextView
@@ -43,6 +46,7 @@ class MainActivity : Activity() {
     private var orbPulse: ObjectAnimator? = null
     private val permissionRequest = 102
     private val historyPrefs by lazy { getSharedPreferences("zeno_history", MODE_PRIVATE) }
+    private var aiInput = JSONArray()
 
     private val voiceReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -131,6 +135,12 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.cyberAskButton).setOnClickListener { fillAndOpenChat("Menga kiberxavfsizlikni noldan o‘rgat. Birinchi darsni boshlaymiz.") }
 
 
+        val savedContext = historyPrefs.getString("ai_context", "[]").orEmpty()
+        try {
+            val restored = JSONArray(savedContext)
+            for (i in 0 until restored.length()) aiInput.put(restored.getJSONObject(i))
+        } catch (_: Exception) { aiInput = JSONArray() }
+
         val savedHistory = historyPrefs.getString("chat", "").orEmpty()
         if (savedHistory.isNotBlank()) chatLog.text = savedHistory else appendChat("ZENO", "Assalomu alaykum. Men ZENOman. Sizga qanday yordam bera olaman?")
     }
@@ -192,12 +202,108 @@ class MainActivity : Activity() {
         if (message.isEmpty()) return
         appendChat("Siz", message)
         messageInput.text.clear()
+
+        // Deterministic commands stay local; natural-language questions go to the AI.
         val localReply = LocalCommandRouter.execute(this, message)
         if (localReply != null) {
             appendChat("ZENO", localReply)
             return
         }
-        appendChat("ZENO", "Buyruqni tushunmadim. Masalan: “Telegramni och”, “orqaga”, “pastga aylantir”, “Wi-Fi sozlamalarini och”.")
+
+        aiInput.put(JSONObject().put("role", "user").put("content", message))
+        saveAiContext()
+        requestAiResponse(0)
+    }
+
+    private fun saveAiContext() {
+        val trimmed = JSONArray()
+        val start = (aiInput.length() - 24).coerceAtLeast(0)
+        for (i in start until aiInput.length()) trimmed.put(aiInput.get(i))
+        aiInput = trimmed
+        historyPrefs.edit().putString("ai_context", aiInput.toString()).apply()
+    }
+
+    private fun requestAiResponse(toolDepth: Int) {
+        status.text = "ZENO fikrlayapti..."
+        textScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) { ZenoAiClient.send(aiInput) }
+                val output = response.optJSONArray("output") ?: JSONArray()
+                val calls = mutableListOf<JSONObject>()
+                for (i in 0 until output.length()) {
+                    val item = output.optJSONObject(i) ?: continue
+                    aiInput.put(item)
+                    if (item.optString("type") == "function_call") calls.add(item)
+                }
+
+                if (calls.isNotEmpty() && toolDepth < 4) {
+                    for (call in calls) {
+                        val name = call.optString("name")
+                        val callId = call.optString("call_id")
+                        val args = try { JSONObject(call.optString("arguments", "{}")) } catch (_: Exception) { JSONObject() }
+                        val result = executeAiTool(name, args)
+                        aiInput.put(JSONObject()
+                            .put("type", "function_call_output")
+                            .put("call_id", callId)
+                            .put("output", result))
+                    }
+                    saveAiContext()
+                    requestAiResponse(toolDepth + 1)
+                    return@launch
+                }
+
+                saveAiContext()
+                val answer = extractAiText(output)
+                if (answer.isNotBlank()) appendChat("ZENO", answer)
+                else appendChat("ZENO", if (calls.isNotEmpty()) "Amal bajarildi, lekin javob matni kelmadi." else "Javob bo‘sh qaytdi. Qayta urinib ko‘ring.")
+                status.text = "ZENO tayyor"
+            } catch (error: Exception) {
+                val message = error.localizedMessage ?: "Aloqa xatosi"
+                appendChat("ZENO", "AI ulanishida xatolik: $message")
+                status.text = "AI ulanish xatosi"
+            }
+        }
+    }
+
+    private fun extractAiText(output: JSONArray): String {
+        val parts = mutableListOf<String>()
+        for (i in 0 until output.length()) {
+            val item = output.optJSONObject(i) ?: continue
+            if (item.optString("type") != "message") continue
+            val content = item.optJSONArray("content") ?: continue
+            for (j in 0 until content.length()) {
+                val part = content.optJSONObject(j) ?: continue
+                if (part.optString("type") == "output_text") {
+                    val text = part.optString("text")
+                    if (text.isNotBlank()) parts.add(text)
+                }
+            }
+        }
+        return parts.joinToString("\n").trim()
+    }
+
+    private fun executeAiTool(name: String, args: JSONObject): String {
+        val command = when (name) {
+            "open_app" -> "och " + args.optString("app_name")
+            "go_home" -> "bosh ekran"
+            "go_back" -> "orqaga"
+            "show_notifications" -> "bildirishnomalarni och"
+            "show_quick_settings" -> "tez sozlamalarni och"
+            "scroll_screen" -> if (args.optString("direction") == "up") "yuqoriga aylantir" else "pastga aylantir"
+            "tap_visible_text" -> "bos " + args.optString("text")
+            "type_text" -> "yoz " + args.optString("text")
+            "search_google" -> "Internetdan qidir " + args.optString("query")
+            "set_alarm" -> "budilnik %02d:%02d".format(args.optInt("hour"), args.optInt("minute"))
+            "set_timer" -> "taymer ${args.optInt("duration_seconds", 600)} soniya"
+            "open_wifi_settings" -> "wifi"
+            "open_bluetooth_settings" -> "bluetooth"
+            "open_maps" -> "xaritada: " + args.optString("destination")
+            "open_dialer" -> "qo'ng'iroq " + args.optString("phone_number")
+            "compose_sms" -> "sms " + args.optString("phone_number") + ": " + args.optString("message")
+            "open_calendar" -> "kalendar"
+            else -> return "Bu amal ZENO tomonidan qo‘llab-quvvatlanmaydi."
+        }
+        return LocalCommandRouter.execute(this, command) ?: "Buyruqni bajarish uchun mos Android amali topilmadi."
     }
 
     private fun createTextClientTools(): Map<String, ClientTool> {
