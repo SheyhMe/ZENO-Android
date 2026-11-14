@@ -204,7 +204,7 @@ class ZenoCloudRepository(context: Context) {
         val cleanContent = content.trim()
         require(cleanContent.isNotBlank() && cleanContent.length <= 10000) { "Xotira 1–10000 belgidan iborat bo‘lishi kerak." }
         client.from("user_memories").update(
-            MemoryUpdateRow(category = category.take(80), content = cleanContent)
+            MemoryUpdateRow(category = category.take(80), content = cleanContent, updated_at = Instant.now().toString())
         ) {
             filter {
                 eq("id", id)
@@ -350,7 +350,8 @@ class ZenoCloudRepository(context: Context) {
     @Serializable
     private data class MemoryUpdateRow(
         val category: String,
-        val content: String
+        val content: String,
+        val updated_at: String
     )
 
     @Serializable
