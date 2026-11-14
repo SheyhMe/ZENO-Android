@@ -5,6 +5,7 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import io.github.jan.supabase.auth.SessionManager
+import io.github.jan.supabase.auth.SettingsSessionManager
 import io.github.jan.supabase.auth.exception.NoSessionFoundException
 import io.github.jan.supabase.auth.user.UserSession
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -70,7 +71,14 @@ private class AndroidEncryptedSessionManager(context: Context) : SessionManager 
     }
 
     override suspend fun loadSession(): UserSession = withContext(Dispatchers.IO) {
-        val encoded = preferences.getString("session", null) ?: throw NoSessionFoundException()
+        val encoded = preferences.getString("session", null)
+        if (encoded == null) {
+            val legacyManager = SettingsSessionManager()
+            val legacySession = legacyManager.loadSessionOrNull() ?: throw NoSessionFoundException()
+            saveSession(legacySession)
+            legacyManager.deleteSession()
+            return@withContext legacySession
+        }
         try {
             val payload = Base64.decode(encoded, Base64.NO_WRAP)
             if (payload.size <= 12) throw NoSessionFoundException()
