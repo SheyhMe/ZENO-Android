@@ -5,10 +5,12 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <queries>
+        <package android:name="com.android.chrome" />
         <intent><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent>
     </queries>
     <application
         android:allowBackup="false"
+        android:usesCleartextTraffic="false"
         android:label="ZENO"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
