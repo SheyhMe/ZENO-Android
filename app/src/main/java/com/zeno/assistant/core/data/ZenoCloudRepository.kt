@@ -30,6 +30,16 @@ data class CloudPreferenceSnapshot(
     val wakePhraseEnabled: Boolean
 )
 
+data class ZenoAiAction(
+    val callId: String,
+    val name: String,
+    val arguments: Map<String, Any>
+)
+
+data class ZenoAiToolResult(val callId: String, val output: String)
+
+data class ZenoAiResponse(val reply: String, val actions: List<ZenoAiAction>)
+
 class ZenoCloudRepository(context: Context) {
     private val preferences = context.applicationContext.getSharedPreferences("zeno_cloud", Context.MODE_PRIVATE)
 
@@ -153,7 +163,11 @@ class ZenoCloudRepository(context: Context) {
         return id
     }
 
-    suspend fun sendAiMessage(messages: List<Pair<String, String>>): String {
+    suspend fun sendAiMessage(
+        messages: List<Pair<String, String>>,
+        previousActions: List<ZenoAiAction> = emptyList(),
+        toolResults: List<ZenoAiToolResult> = emptyList()
+    ): ZenoAiResponse {
         awaitSession()
         val accessToken = client.auth.currentAccessTokenOrNull()
             ?: error("ZENO AI uchun avval ZENO Cloud hisobiga kiring.")
@@ -169,13 +183,27 @@ class ZenoCloudRepository(context: Context) {
                 connection.setRequestProperty("Content-Type", "application/json; charset=utf-8")
                 connection.setRequestProperty("Accept", "application/json")
 
-                val payload = JSONObject().put("messages", JSONArray().apply {
-                    messages.takeLast(20).forEach { (role, content) ->
-                        if (content.isNotBlank() && (role == "user" || role == "assistant")) {
-                            put(JSONObject().put("role", role).put("content", content.take(6000)))
+                val payload = JSONObject()
+                    .put("messages", JSONArray().apply {
+                        messages.takeLast(20).forEach { (role, content) ->
+                            if (content.isNotBlank() && (role == "user" || role == "assistant")) {
+                                put(JSONObject().put("role", role).put("content", content.take(6000)))
+                            }
                         }
-                    }
-                })
+                    })
+                    .put("toolCalls", JSONArray().apply {
+                        previousActions.forEach { action ->
+                            put(JSONObject()
+                                .put("call_id", action.callId)
+                                .put("name", action.name)
+                                .put("arguments", JSONObject(action.arguments)))
+                        }
+                    })
+                    .put("toolResults", JSONArray().apply {
+                        toolResults.forEach { result ->
+                            put(JSONObject().put("call_id", result.callId).put("output", result.output))
+                        }
+                    })
                 connection.outputStream.use { it.write(payload.toString().toByteArray(Charsets.UTF_8)) }
 
                 val status = connection.responseCode
@@ -185,8 +213,27 @@ class ZenoCloudRepository(context: Context) {
                 if (status !in 200..299) {
                     error(json.optString("error").ifBlank { "ZENO AI serverida xatolik ($status)." })
                 }
-                json.optString("reply").takeIf { it.isNotBlank() }
-                    ?: error("ZENO AI bo‘sh javob qaytardi.")
+
+                val actions = mutableListOf<ZenoAiAction>()
+                val actionArray = json.optJSONArray("actions") ?: JSONArray()
+                for (index in 0 until actionArray.length()) {
+                    val item = actionArray.optJSONObject(index) ?: continue
+                    val args = item.optJSONObject("arguments") ?: JSONObject()
+                    val values = mutableMapOf<String, Any>()
+                    val keys = args.keys()
+                    while (keys.hasNext()) {
+                        val key = keys.next()
+                        val value = args.opt(key)
+                        if (value != null && value != JSONObject.NULL) values[key] = value
+                    }
+                    val callId = item.optString("call_id")
+                    val name = item.optString("name")
+                    if (callId.isNotBlank() && name.isNotBlank()) {
+                        actions.add(ZenoAiAction(callId, name, values))
+                    }
+                }
+
+                ZenoAiResponse(json.optString("reply"), actions)
             } finally {
                 connection.disconnect()
             }
