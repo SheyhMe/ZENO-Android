@@ -1,5 +1,32 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#00000000" android:strokeColor="#A98BFF" android:strokeWidth="2.4" android:pathData="M14,55 C25,20 80,16 94,47 C106,75 55,96 18,72" />
-    <path android:fillColor="#E8DDFF" android:pathData="M27,35 L79,35 L79,44 L45,70 L81,70 L81,80 L25,80 L25,70 L61,45 L27,45 Z" />
-    <path android:fillColor="#FFFFFF" android:pathData="M84,17 L86,23 L92,25 L86,27 L84,33 L82,27 L76,25 L82,23 Z" />
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Clean orbital mark framing the ZENO monogram. -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#5DE1D0"
+        android:strokeWidth="2.8"
+        android:strokeLineCap="round"
+        android:pathData="M22,59 C22,36 39,20 60,20 C77,20 89,31 92,43" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#806BFF"
+        android:strokeWidth="2.8"
+        android:strokeLineCap="round"
+        android:pathData="M86,53 C86,75 69,90 48,90 C32,90 20,80 16,66" />
+    <path
+        android:fillColor="#5DE1D0"
+        android:pathData="M72,16 C74,16 76,18 76,20 C76,22 74,24 72,24 C70,24 68,22 68,20 C68,18 70,16 72,16 Z" />
+    <path
+        android:fillColor="#806BFF"
+        android:pathData="M31,84 C33,84 35,86 35,88 C35,90 33,92 31,92 C29,92 27,90 27,88 C27,86 29,84 31,84 Z" />
+    <!-- Geometric Z monogram. -->
+    <path
+        android:fillColor="#F4F2FF"
+        android:pathData="M29,34 L79,34 L79,43 L46,68 L80,68 L80,78 L28,78 L28,68 L62,44 L29,44 Z" />
+    <path
+        android:fillColor="#5DE1D0"
+        android:pathData="M72,34 L79,34 L79,43 L72,48 Z" />
 </vector>
