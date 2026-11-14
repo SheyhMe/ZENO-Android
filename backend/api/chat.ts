@@ -71,7 +71,7 @@ export default async function handler(req: any, res: any) {
           "If a request needs a phone action, explain that the user can use ZENO's voice controls for that action.",
           "Never invent live facts, search results, or completed actions."
         ].join("\n"),
-        input: messages,
+        input: messages.map((message) => ({ type: "message", ...message })),
         max_output_tokens: 1200,
       }),
     });
