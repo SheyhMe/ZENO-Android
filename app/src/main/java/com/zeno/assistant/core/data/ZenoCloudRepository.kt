@@ -159,7 +159,7 @@ class ZenoCloudRepository(context: Context) {
             ?: error("ZENO AI uchun avval ZENO Cloud hisobiga kiring.")
 
         return withContext(Dispatchers.IO) {
-            val connection = (URL("https://zeno-private-backend.vercel.app/api/chat").openConnection() as HttpURLConnection)
+            val connection = (URL("https://zeno-private-backend-git-zeno-full-upgrade-seyhme-5727.vercel.app/api/chat").openConnection() as HttpURLConnection)
             try {
                 connection.requestMethod = "POST"
                 connection.connectTimeout = 15000
