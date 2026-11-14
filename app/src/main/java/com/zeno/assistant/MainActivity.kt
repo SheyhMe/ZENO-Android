@@ -35,6 +35,8 @@ import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
 import java.util.Locale
+import com.zeno.assistant.core.data.ZenoAiAction
+import com.zeno.assistant.core.data.ZenoAiToolResult
 
 class MainActivity : AppCompatActivity() {
     private lateinit var status: TextView
@@ -549,8 +551,26 @@ class MainActivity : AppCompatActivity() {
         status.text = "ZENO javob tayyorlamoqda..."
         textScope.launch {
             try {
-                val reply = cloudRepository.sendAiMessage(context)
-                appendChat("ZENO", reply)
+                var response = cloudRepository.sendAiMessage(context)
+                if (response.actions.isNotEmpty()) {
+                    val actionResults = response.actions.take(6).map { action ->
+                        val tool = AndroidActionTools.create(this@MainActivity)[action.name]
+                        val result = try {
+                            tool?.execute(action.arguments)
+                        } catch (error: Exception) {
+                            null
+                        }
+                        val output = when {
+                            tool == null -> "Bu amal qurilmada qo‘llab-quvvatlanmaydi."
+                            result == null -> "Amal qurilmaga yuborildi."
+                            result.success -> result.result
+                            else -> result.error ?: "Amal bajarilmadi."
+                        }
+                        ZenoAiToolResult(action.callId, output)
+                    }
+                    response = cloudRepository.sendAiMessage(context, response.actions, actionResults)
+                }
+                appendChat("ZENO", response.reply.ifBlank { "Amal bajarildi." })
                 status.text = "ZENO AI tayyor"
             } catch (e: Exception) {
                 appendChat("ZENO", e.localizedMessage ?: "AI bilan bog‘lanib bo‘lmadi.")
