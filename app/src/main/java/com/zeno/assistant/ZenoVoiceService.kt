@@ -100,10 +100,15 @@ class ZenoVoiceService : Service() {
             override fun onEndOfSpeech() {}
             override fun onError(error: Int) {
                 wakeListening = false
-                broadcastStatus("Ovoz tanish xatosi: " + error + ". Qayta ulanmoqda...")
+                // ERROR_NO_MATCH (7) and ERROR_SPEECH_TIMEOUT (6) are normal
+                // while waiting for a wake phrase; do not report them as fatal errors.
+                if (error != SpeechRecognizer.ERROR_NO_MATCH &&
+                    error != SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
+                    broadcastStatus("Ovoz xizmati qayta ulanmoqda (" + error + ")...")
+                }
                 try { speechRecognizer?.destroy() } catch (_: Exception) {}
                 speechRecognizer = null
-                if (!stopping) handler.postDelayed({ startWakeRecognizer() }, 2500)
+                if (!stopping) handler.postDelayed({ startWakeRecognizer() }, 1200)
             }
             override fun onResults(results: android.os.Bundle?) {
                 wakeListening = false
@@ -154,8 +159,9 @@ class ZenoVoiceService : Service() {
                 try {
                     val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "uz-UZ")
-                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "uz-UZ")
+                        // The wake phrase is English; actual commands are captured in Uzbek below.
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US")
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "en-US")
                         putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                         putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
                     }
